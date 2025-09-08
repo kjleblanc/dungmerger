@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f0287c35b358ae4cb666376c9979351, type: 3}
+  m_Name: SO_EnemyVisualLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyVisualLibrary
+  entries:
+  - kind: 1
+    overrideController: {fileID: 22100000, guid: 69cb5c402023ba9428ca453ce3b5e6cb, type: 2}
+    defaultSprite: {fileID: 8647823593821616703, guid: 28620f9889a0cfb4e8023d53258d289d, type: 3}
+  - kind: 0
+    overrideController: {fileID: 0}
+    defaultSprite: {fileID: -7282886668606283007, guid: 9ef3f7ab5435e684d9813ca25b54d78a, type: 3}
