@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 8097497721693964421}
   - component: {fileID: 4670259226436717769}
   - component: {fileID: 709346071248415561}
-  - component: {fileID: 9176680170978878185}
+  - component: {fileID: 5091069614002091335}
   m_Layer: 5
   m_Name: PF_Enemy
   m_TagString: Untagged
@@ -190,7 +190,7 @@ MonoBehaviour:
   label: {fileID: 0}
   healthFill: {fileID: 8475263902027756400}
   enemyVisual: {fileID: 1541206309244222606}
---- !u!114 &9176680170978878185
+--- !u!114 &5091069614002091335
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -199,10 +199,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 5828500069196473442}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b70b1c6d72b51b74783b1ff8379dcce9, type: 3}
+  m_Script: {fileID: 11500000, guid: 33deea6fe8272334aa3bf5cebb453492, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyMover
-  grid: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyUnitMover
 --- !u!1 &8918530165313155133
 GameObject:
   m_ObjectHideFlags: 0

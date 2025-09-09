@@ -52,7 +52,8 @@ namespace MergeDungeon.Core
             }
             if (u >= 1f)
             {
-                Destroy(gameObject);
+                var pool = GetComponentInParent<MergeDungeon.Core.DamagePopupPool>();
+                if (pool != null) pool.Release(this); else Destroy(gameObject);
             }
         }
     }

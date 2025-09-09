@@ -14,6 +14,7 @@ namespace MergeDungeon.Core
         [Header("Refs")]
         public GridManager grid;
         public RoomMapUI mapUI;
+        public RoomChangedEventChannelSO roomChanged;
         [Tooltip("Optional: Per-floor pools defining waves and rooms-per-floor.")]
         public List<FloorRoomPool> floorPools = new List<FloorRoomPool>();
 
@@ -53,6 +54,8 @@ namespace MergeDungeon.Core
                 StartCoroutine(DeferredStartRun());
             }
             UpdateMap();
+            // try load saved state
+            TryLoadState();
         }
 
         private IEnumerator DeferredStartRun()
@@ -76,6 +79,16 @@ namespace MergeDungeon.Core
             }
         }
 
+        private void OnApplicationPause(bool pause)
+        {
+            if (pause) TrySaveState();
+        }
+
+        private void OnApplicationQuit()
+        {
+            TrySaveState();
+        }
+
         public void StartRun()
         {
             currentFloor = 1;
@@ -86,9 +99,14 @@ namespace MergeDungeon.Core
 
         private void UpdateMap()
         {
+            int rpf = RoomsPerFloorForFloor(currentFloor);
             if (mapUI != null)
             {
-                mapUI.Set(currentFloor, currentRoom, RoomsPerFloorForFloor(currentFloor));
+                mapUI.Set(currentFloor, currentRoom, rpf);
+            }
+            if (roomChanged != null)
+            {
+                roomChanged.Raise(currentFloor, currentRoom, rpf);
             }
         }
 
@@ -123,6 +141,7 @@ namespace MergeDungeon.Core
             }
             UpdateMap();
             SpawnCurrentRoom();
+            TrySaveState();
         }
 
         private void SpawnCurrentRoom()
@@ -230,6 +249,7 @@ namespace MergeDungeon.Core
         {
             int perAdvance = Mathf.Max(1, _currentWave != null ? Mathf.Max(1, _currentWave.perAdvanceSpawn) : 1);
             SpawnPending(perAdvance);
+            TrySaveState();
         }
 
         private int ResolveHp(EnemyKind kind, int floor, int hpOverride, int hpBonusPerFloor)
@@ -256,5 +276,43 @@ namespace MergeDungeon.Core
             var pool = GetPoolForFloor(floor);
             return pool != null ? Mathf.Max(1, pool.roomsPerFloor) : Mathf.Max(1, roomsPerFloor);
         }
+
+		private async void TryLoadState()
+		{
+			var host = SaveServiceHost.Instance;
+			if (host == null) return;
+			// ensure board is ready before applying state
+			await System.Threading.Tasks.Task.Yield();
+			while (grid != null && !grid.IsBoardReady)
+			{
+				await System.Threading.Tasks.Task.Yield();
+			}
+			var (ok, state) = await host.LoadAsync();
+			if (!ok || state == null) return;
+			currentFloor = Mathf.Max(1, state.floor);
+			currentRoom = Mathf.Max(1, state.room);
+			UpdateMap();
+			SpawnCurrentRoom();
+			if (grid != null)
+			{
+				var meter = grid.GetComponent<AdvanceMeterController>();
+				if (meter != null)
+				{
+					meter.enemyAdvanceMeter = Mathf.Max(0, state.meter);
+					meter.RefreshUI();
+				}
+			}
+		}
+
+		private async void TrySaveState()
+		{
+			var host = SaveServiceHost.Instance;
+			if (host == null) return;
+			int meterVal = 0;
+			var meter = grid != null ? grid.GetComponent<AdvanceMeterController>() : null;
+			if (meter != null) meterVal = meter.enemyAdvanceMeter;
+			var state = new GameState { floor = currentFloor, room = currentRoom, meter = meterVal };
+			await host.SaveAsync(state);
+		}
     }
 }

@@ -11,11 +11,22 @@ namespace MergeDungeon.Core
         public TMP_Text nextLabel;
         public Image currentSquare;
         public Image nextSquare;
+        public RoomChangedEventChannelSO roomChanged;
 
         [Header("Colors")]
         public Color currentColor = new Color(0.3f, 0.85f, 1f, 1f);
         public Color nextColor = new Color(0.85f, 0.85f, 0.85f, 1f);
         public Color bossColor = new Color(1f, 0.5f, 0.5f, 1f);
+
+        private void OnEnable()
+        {
+            if (roomChanged != null) roomChanged.Raised += Set;
+        }
+
+        private void OnDisable()
+        {
+            if (roomChanged != null) roomChanged.Raised -= Set;
+        }
 
         public void Set(int floor, int room, int roomsPerFloor)
         {

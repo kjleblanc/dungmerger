@@ -14,6 +14,8 @@ namespace MergeDungeon.Core
         public static GridManager Instance { get; private set; }
         public event System.Action<EnemyController> EnemySpawned;
         public event System.Action<EnemyController> EnemyDied;
+        [Header("Events")]
+        public VoidEventChannelSO advanceTick;
 
         [Header("Board Size (moved to BoardController)")]
         public int Width => _board != null ? _board.width : 0;
@@ -198,7 +200,8 @@ namespace MergeDungeon.Core
             if (_advanceMeter.IsFull())
             {
                 _advanceMeter.ResetMeter();
-                _enemyMover.AdvanceEnemies();
+                if (advanceTick != null) advanceTick.Raise();
+                else _enemyMover.AdvanceEnemies();
                 _advanceMeter.RefreshUI();
                 EnemyAdvanced?.Invoke();
             }

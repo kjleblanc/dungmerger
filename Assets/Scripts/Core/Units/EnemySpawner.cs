@@ -71,6 +71,10 @@ namespace MergeDungeon.Core
 
             var cell = candidateCells[Random.Range(0, candidateCells.Count)];
             var e = Instantiate(enemyPrefab);
+            if (e.GetComponent<EnemyUnitMover>() == null)
+            {
+                e.gameObject.AddComponent<EnemyUnitMover>();
+            }
             e.kind = kind;
             e.isBoss = isBoss;
             e.InitializeStats(Mathf.Max(1, baseHp));

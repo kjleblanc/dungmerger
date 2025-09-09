@@ -13,6 +13,7 @@ namespace MergeDungeon.Core
         [Header("Damage Popup")]
         public DamagePopup damagePopupPrefab;
         public Color damageNumberColor = new Color(1f, 0.3f, 0.3f, 1f);
+        [SerializeField] private DamagePopupPool popupPool;
 
         [Header("Refs (Optional)")]
         public DragLayerController dragLayerController;
@@ -55,7 +56,7 @@ namespace MergeDungeon.Core
 
             if (damagePopupPrefab != null)
             {
-                var popup = Object.Instantiate(damagePopupPrefab, layer);
+                var popup = popupPool != null ? popupPool.Get(layer) : Object.Instantiate(damagePopupPrefab, layer);
                 var rt = popup.GetComponent<RectTransform>();
                 if (layerRT != null) rt.anchoredPosition = anchored; else if (target != null) rt.position = target.position; else rt.anchoredPosition = Vector2.zero;
                 if (popup.label == null)

@@ -15,6 +15,7 @@ namespace MergeDungeon.Core
         [Header("UI (Optional)")]
         public Image enemyAdvanceFill;
         public TMP_Text enemyAdvanceLabel;
+        public VoidEventChannelSO meterChanged;
 
         [Header("Pulse (Optional)")]
         public bool enemyAdvancePulse = true;
@@ -34,10 +35,11 @@ namespace MergeDungeon.Core
         public void Increment()
         {
             enemyAdvanceMeter = Mathf.Clamp(enemyAdvanceMeter + 1, 0, Mathf.Max(1, enemyAdvanceThreshold));
+            if (meterChanged != null) meterChanged.Raise();
         }
 
         public bool IsFull() => enemyAdvanceMeter >= Mathf.Max(1, enemyAdvanceThreshold);
-        public void ResetMeter() => enemyAdvanceMeter = 0;
+        public void ResetMeter() { enemyAdvanceMeter = 0; if (meterChanged != null) meterChanged.Raise(); }
 
         public void RefreshUI()
         {
@@ -51,6 +53,16 @@ namespace MergeDungeon.Core
             {
                 enemyAdvanceLabel.text = $"ENEMY MOVE: {enemyAdvanceMeter}/{Mathf.Max(1, enemyAdvanceThreshold)}";
             }
+        }
+
+        private void OnEnable()
+        {
+            if (meterChanged != null) meterChanged.Raised += RefreshUI;
+        }
+
+        private void OnDisable()
+        {
+            if (meterChanged != null) meterChanged.Raised -= RefreshUI;
         }
 
         private void LateUpdate()
