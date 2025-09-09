@@ -113,6 +113,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyVisual
   animator: {fileID: 0}
   overrideController: {fileID: 0}
+  spriteRenderer: {fileID: 0}
+  uiImage: {fileID: 0}
   idleState: Idle
   useTrigger: Use
   hitTrigger: Hit
@@ -127,8 +129,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8097497721693964421}
   - component: {fileID: 4670259226436717769}
-  - component: {fileID: 5254195190593704328}
-  - component: {fileID: 6572848356055042922}
+  - component: {fileID: 709346071248415561}
+  - component: {fileID: 9176680170978878185}
   m_Layer: 5
   m_Name: PF_Enemy
   m_TagString: Untagged
@@ -166,7 +168,7 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5828500069196473442}
   m_CullTransparentMesh: 1
---- !u!114 &5254195190593704328
+--- !u!114 &709346071248415561
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -175,48 +177,32 @@ MonoBehaviour:
   m_GameObject: {fileID: 5828500069196473442}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0, b: 0, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!114 &6572848356055042922
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5828500069196473442}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9ba30d170fe7b8e4cb1297c96ec092cb, type: 3}
+  m_Script: {fileID: 11500000, guid: c29a432370de09a46bb06675cd7d7fa9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyController
   kind: 0
   maxHp: 1
   hp: 1
   isBoss: 0
+  engagedWithHero: 0
   currentCell: {fileID: 0}
-  bg: {fileID: 5254195190593704328}
-  label: {fileID: 6424525284628818448}
+  bg: {fileID: 0}
+  label: {fileID: 0}
   healthFill: {fileID: 8475263902027756400}
-  enemyVisual: {fileID: 0}
+  enemyVisual: {fileID: 1541206309244222606}
+--- !u!114 &9176680170978878185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5828500069196473442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b70b1c6d72b51b74783b1ff8379dcce9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyMover
+  grid: {fileID: 0}
 --- !u!1 &8918530165313155133
 GameObject:
   m_ObjectHideFlags: 0
