@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -9,19 +8,14 @@ namespace MergeDungeon.Core
     {
         public GridManager grid;
         public TileBase tilePrefab;
-        public MergeRules mergeRules;
+        public TileDatabase tileDatabase;
+        public TileFactory tileFactory;
 
         private void Awake()
         {
             if (grid == null) grid = GridManager.Instance;
         }
 
-        public void InitializeFrom(GridManager g)
-        {
-            grid = g;
-            if (tilePrefab == null) tilePrefab = g.tilePrefab;
-            if (mergeRules == null) mergeRules = g.mergeRules;
-        }
         public bool TryPlaceTileInCell(TileBase tile, BoardCell cell)
         {
             if (cell == null) return false;
@@ -34,183 +28,119 @@ namespace MergeDungeon.Core
             return true;
         }
 
-        public bool TrySpawnTileAtRandom(TileKind kind)
-        {
-            var empty = grid != null ? grid.CollectEmptyCells() : null;
-            if (empty == null || empty.Count == 0) return false;
-            var cell = empty[Random.Range(0, empty.Count)];
-            var t = Instantiate(tilePrefab);
-            t.kind = kind;
-            t.RefreshVisual();
-            cell.SetTile(t);
-            return true;
-        }
-
-        public void SpawnTileAtRandom(TileKind kind)
-        {
-            TrySpawnTileAtRandom(kind);
-        }
-
-                public bool TrySpawnTileNear(TileKind kind, BoardCell origin)
-        {
-            if (grid == null || origin == null) return TrySpawnTileAtRandom(kind);
-
-            var visited = new HashSet<BoardCell>();
-            var q = new Queue<BoardCell>();
-            visited.Add(origin);
-            q.Enqueue(origin);
-
-            while (q.Count > 0)
-            {
-                var c = q.Dequeue();
-                if (c.IsFreeForTile())
-                {
-                    var tile = Instantiate(tilePrefab);
-                    tile.kind = kind;
-                    tile.RefreshVisual();
-                    var rt = tile.GetComponent<RectTransform>();
-                    Transform layer = grid.dragLayer != null ? grid.dragLayer : c.rectTransform.parent;
-                    rt.SetParent(layer, worldPositionStays: false);
-                    rt.position = origin.rectTransform.position;
-                    StartCoroutine(MoveTileToCell(tile, c));
-                    return true;
-                }
-
-                Enqueue(c.x + 1, c.y);
-                Enqueue(c.x - 1, c.y);
-                Enqueue(c.x, c.y + 1);
-                Enqueue(c.x, c.y - 1);
-            }
-
-            return false;
-
-            void Enqueue(int x, int y)
-            {
-                var n = grid.GetCell(x, y);
-                if (n != null && !visited.Contains(n))
-                {
-                    visited.Add(n);
-                    q.Enqueue(n);
-                }
-            }
-        }
-
-        public void SpawnTileNear(TileKind kind, BoardCell origin)
-        {
-            TrySpawnTileNear(kind, origin);
-        }
-
-        private IEnumerator MoveTileToCell(TileBase tile, BoardCell cell)
-        {
-            var rt = tile.GetComponent<RectTransform>();
-            Vector3 start = rt.position;
-            Vector3 end = cell.rectTransform.position;
-            float dur = 0.15f;
-            float elapsed = 0f;
-            while (elapsed < dur)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / dur);
-                rt.position = Vector3.Lerp(start, end, t);
-                yield return null;
-            }
-            cell.SetTile(tile);
-        }
+        // Legacy enum-based spawn helpers removed
 
         public bool TryMergeOnDrop(TileBase source, TileBase target)
         {
-            if (mergeRules == null || grid == null) return false;
+            if (grid == null) return false;
             if (source == null || target == null) return false;
             if (target.currentCell == null) return false;
-            if (source.kind != target.kind) return false;
 
-            MergeRules.MergeRecipe recipe;
-            if (!TryGetMergeRecipe(target.kind, out recipe)) return false;
+            // Resolve definitions
+            var sourceDef = source.def;
+            var targetDef = target.def;
 
-            var originCell = target.currentCell;
-            var group = CollectConnectedTilesOfKind(originCell, target.kind);
-            if (source.currentCell != null)
-                group.Remove(source.currentCell);
-            int groupCount = group.Count;
-            int totalWithDrop = groupCount + 1;
+            bool canMerge;
+            TileDefinition.MergeRule defRule = null;
+            TileDefinition outputDef = null;
+            int defToConsume = 0;
+            int defToProduce = 0;
 
-            int toConsume;
-            int toProduce;
-            if (totalWithDrop >= 5)
+            if (sourceDef != null && targetDef != null)
             {
-                toConsume = 5;
-                toProduce = 2;
-            }
-            else if (totalWithDrop >= 3)
-            {
-                toConsume = 3;
-                toProduce = 1;
-            }
-            else
-            {
-                return false;
-            }
+                bool sameBucket = sourceDef == targetDef || (targetDef.mergesWith != null && sourceDef == targetDef.mergesWith);
+                if (!sameBucket) return false;
 
-            if (source.currentCell != null)
-            {
-                source.currentCell.ClearTileIf(source);
-            }
-            Destroy(source.gameObject);
+                var originCellDef = target.currentCell;
+                var groupDef = CollectConnectedTilesOfDefinition(originCellDef, targetDef, targetDef.mergesWith);
+                if (source.currentCell != null)
+                    groupDef.Remove(source.currentCell);
+                int totalWithDropDef = groupDef.Count + 1;
 
-            var ordered = group.OrderBy(c => Manhattan(c, originCell)).ToList();
-            var consumeCells = new List<BoardCell>();
-            for (int i = 0; i < ordered.Count && consumeCells.Count < (toConsume - 1); i++)
-            {
-                var c = ordered[i];
-                if (c != null && c.tile != null)
-                    consumeCells.Add(c);
-            }
-
-            foreach (var c in consumeCells)
-            {
-                if (c.tile != null)
+                if (totalWithDropDef >= 5 && targetDef.fiveOfAKind != null && targetDef.fiveOfAKind.output != null)
                 {
-                    Destroy(c.tile.gameObject);
-                    c.tile = null;
+                    defRule = targetDef.fiveOfAKind;
                 }
-            }
-
-            void PlaceUpgradeAt(BoardCell cell)
-            {
-                var t = Instantiate(tilePrefab);
-                t.kind = recipe.output;
-                t.RefreshVisual();
-                cell.SetTile(t);
-            }
-
-            PlaceUpgradeAt(originCell);
-            if (toProduce > 1)
-            {
-                BoardCell second = null;
-                foreach (var c in consumeCells)
+                else if (totalWithDropDef >= 3 && targetDef.threeOfAKind != null && targetDef.threeOfAKind.output != null)
                 {
-                    if (c != null && c != originCell)
+                    defRule = targetDef.threeOfAKind;
+                }
+                else
+                {
+                    return false;
+                }
+
+                defToConsume = Mathf.Max(2, defRule.countToConsume);
+                defToProduce = Mathf.Max(1, defRule.outputCount);
+                outputDef = defRule.output;
+
+                if (source.currentCell != null)
+                {
+                    source.currentCell.ClearTileIf(source);
+                }
+                Destroy(source.gameObject);
+
+                var orderedDef = groupDef.OrderBy(c => Manhattan(c, originCellDef)).ToList();
+                var consumeCellsDef = new List<BoardCell>();
+                for (int i = 0; i < orderedDef.Count && consumeCellsDef.Count < (defToConsume - 1); i++)
+                {
+                    var c = orderedDef[i];
+                    if (c != null && c.tile != null)
+                        consumeCellsDef.Add(c);
+                }
+
+                foreach (var c in consumeCellsDef)
+                {
+                    if (c.tile != null)
                     {
-                        second = c;
-                        break;
+                        Destroy(c.tile.gameObject);
+                        c.tile = null;
                     }
                 }
-                if (second == null)
+
+                void PlaceUpgradeAtDef(BoardCell cell)
                 {
-                    var empties = grid.CollectEmptyCells();
-                    if (empties.Count > 0)
-                        second = empties[Random.Range(0, empties.Count)];
+                    TileBase nt = tileFactory != null ? tileFactory.Create(outputDef) : Instantiate(tilePrefab);
+                    if (nt != null)
+                    {
+                        if (nt.def == null && outputDef != null) nt.SetDefinition(outputDef);
+                        nt.RefreshVisual();
+                        cell.SetTile(nt);
+                    }
                 }
-                if (second != null)
+
+                PlaceUpgradeAtDef(originCellDef);
+                if (defToProduce > 1)
                 {
-                    PlaceUpgradeAt(second);
+                    BoardCell second = null;
+                    foreach (var c in consumeCellsDef)
+                    {
+                        if (c != null && c != originCellDef)
+                        {
+                            second = c;
+                            break;
+                        }
+                    }
+                    if (second == null)
+                    {
+                        var empties = grid.CollectEmptyCells();
+                        if (empties.Count > 0)
+                            second = empties[Random.Range(0, empties.Count)];
+                    }
+                    if (second != null)
+                    {
+                        PlaceUpgradeAtDef(second);
+                    }
                 }
+
+                return true;
             }
 
-            return true;
+            // Legacy merge path removed. Only definition-driven merges are supported now.
+            return false;
         }
 
-        public List<BoardCell> CollectConnectedTilesOfKind(BoardCell originCell, TileKind kind)
+        public List<BoardCell> CollectConnectedTilesOfDefinition(BoardCell originCell, TileDefinition def, TileDefinition mergesWith)
         {
             var visited = new HashSet<BoardCell>();
             var list = new List<BoardCell>();
@@ -220,13 +150,17 @@ namespace MergeDungeon.Core
             while (q.Count > 0)
             {
                 var c = q.Dequeue();
-                if (c.tile != null && c.tile.kind == kind)
+                if (c.tile != null)
                 {
-                    list.Add(c);
-                    TryEnqueue(c.x + 1, c.y);
-                    TryEnqueue(c.x - 1, c.y);
-                    TryEnqueue(c.x, c.y + 1);
-                    TryEnqueue(c.x, c.y - 1);
+                    var td = c.tile.def;
+                    if (td != null && (td == def || (mergesWith != null && td == mergesWith)))
+                    {
+                        list.Add(c);
+                        TryEnqueue(c.x + 1, c.y);
+                        TryEnqueue(c.x - 1, c.y);
+                        TryEnqueue(c.x, c.y + 1);
+                        TryEnqueue(c.x, c.y - 1);
+                    }
                 }
             }
             return list;
@@ -237,7 +171,8 @@ namespace MergeDungeon.Core
                 if (n != null && !visited.Contains(n))
                 {
                     visited.Add(n);
-                    if (n.tile != null && n.tile.kind == kind)
+                    var nd = n.tile != null ? n.tile.def : null;
+                    if (nd != null && (nd == def || (mergesWith != null && nd == mergesWith)))
                     {
                         q.Enqueue(n);
                     }
@@ -248,31 +183,6 @@ namespace MergeDungeon.Core
         private int Manhattan(BoardCell a, BoardCell b)
         {
             return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
-        }
-
-        private bool TryGetMergeRecipe(TileKind kind, out MergeRules.MergeRecipe recipe)
-        {
-            if (mergeRules != null && mergeRules.TryGetRecipe(kind, out recipe))
-                return true;
-            // Fallback default rules if no asset is assigned
-            switch (kind)
-            {
-                case TileKind.SwordStrike:
-                    recipe = new MergeRules.MergeRecipe { input = kind, count = 3, output = TileKind.Cleave };
-                    return true;
-                case TileKind.Spark:
-                    recipe = new MergeRules.MergeRecipe { input = kind, count = 3, output = TileKind.Fireball };
-                    return true;
-                case TileKind.Goo:
-                    recipe = new MergeRules.MergeRecipe { input = kind, count = 3, output = TileKind.GooJelly };
-                    return true;
-                case TileKind.Mushroom:
-                    recipe = new MergeRules.MergeRecipe { input = kind, count = 3, output = TileKind.MushroomStew };
-                    return true;
-                default:
-                    recipe = null;
-                    return false;
-            }
         }
     }
 }

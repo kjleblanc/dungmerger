@@ -150,7 +150,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.TileService
   grid: {fileID: 812644175}
   tilePrefab: {fileID: 9041613371303601300, guid: 3b1dc137e23ca1e49931cc3777dcde38, type: 3}
-  mergeRules: {fileID: 11400000, guid: e68847eadfed2c4449b5ec80472a0555, type: 2}
+  tileDatabase: {fileID: 11400000, guid: 50297c63071016f489c03ff7f66b9286, type: 2}
+  tileFactory: {fileID: 812644177}
 --- !u!4 &7095151
 Transform:
   m_ObjectHideFlags: 0
@@ -677,6 +678,8 @@ MonoBehaviour:
   slimeLootTable: {fileID: 11400000, guid: 59cb9f6699d91cc4bbc1a06c0eededba, type: 2}
   batLootTable: {fileID: 11400000, guid: c425102e5f5e63f489cd0b10601dbfc0, type: 2}
   tilePrefabForFallback: {fileID: 9041613371303601300, guid: 3b1dc137e23ca1e49931cc3777dcde38, type: 3}
+  slimeLootBagDef: {fileID: 0}
+  batLootBagDef: {fileID: 0}
 --- !u!4 &513218071
 Transform:
   m_ObjectHideFlags: 0
@@ -1160,6 +1163,7 @@ GameObject:
   m_Component:
   - component: {fileID: 812644176}
   - component: {fileID: 812644175}
+  - component: {fileID: 812644177}
   m_Layer: 0
   m_Name: GridManager
   m_TagString: Untagged
@@ -1190,22 +1194,21 @@ MonoBehaviour:
   heroesBottomRow: 0
   restrictHeroesToBottomRow: 1
   spawnEnemiesContinuously: 0
-  testEnemiesOnStart: 1
+  testEnemiesOnStart: 0
   boardController: {fileID: 1309035646}
   enemySpawner: {fileID: 513218070}
   tileService: {fileID: 7095150}
   lootBagPrefab: {fileID: -3716925628221120357, guid: 3351ce7d26c37cb4cb866f403ed528c5, type: 3}
   slimeLootTable: {fileID: 11400000, guid: 59cb9f6699d91cc4bbc1a06c0eededba, type: 2}
   batLootTable: {fileID: 11400000, guid: c425102e5f5e63f489cd0b10601dbfc0, type: 2}
-  mergeRules: {fileID: 11400000, guid: e68847eadfed2c4449b5ec80472a0555, type: 2}
-  tileVisuals: {fileID: 11400000, guid: b61b4e7203e5dc24bbf8d4458666e236, type: 2}
-  warriorSpawnTable: {fileID: 11400000, guid: 74615a4c8f0bd6e4d90e383af5e7e454, type: 2}
+  tileDatabase: {fileID: 11400000, guid: 50297c63071016f489c03ff7f66b9286, type: 2}
+  warriorSpawnTable: {fileID: 11400000, guid: 499f3f4470f9d4d4fb8d230bc70de80c, type: 2}
   mageSpawnTable: {fileID: 11400000, guid: 0eb6c48c3cc3512408bc63b2a2ba40ad, type: 2}
-  abilityConfig: {fileID: 11400000, guid: b040a25c1e6eee242b98d970c6532e85, type: 2}
   enemyDatabase: {fileID: 11400000, guid: 95d3a6cf4e868fc4c9fc4f8c26144a26, type: 2}
   fxController: {fileID: 962978429}
   enemyVisualLibrary: {fileID: 11400000, guid: 1a55b45f9c31868439f1b5ea310924a1, type: 2}
   heroVisualLibrary: {fileID: 11400000, guid: 7ca927e79e38beb429f3e0c941f5603e, type: 2}
+  tileFactory: {fileID: 812644177}
   forceDragAbove: 1
   dragSortingOrder: 4500
 --- !u!4 &812644176
@@ -1223,6 +1226,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1199088243}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &812644177
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 812644174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2865669ab02f22c42baf49301ab1ef8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.TileFactory
+  database: {fileID: 11400000, guid: 50297c63071016f489c03ff7f66b9286, type: 2}
+  defaultTilePrefab: {fileID: 9041613371303601300, guid: 3b1dc137e23ca1e49931cc3777dcde38, type: 3}
 --- !u!1 &908633227
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1855b2b7dc76bec428f00ad557cdcd96, type: 3}
+  m_Name: TileDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.TileDatabase
+  tiles:
+  - {fileID: 11400000, guid: 1154fc05acfad4e46b1302497783d77d, type: 2}
+  - {fileID: 11400000, guid: 89c658bfc70ecc5479d4f499c58aedce, type: 2}
+  editorSearchFolders: []

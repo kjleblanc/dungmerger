@@ -74,7 +74,7 @@ namespace MergeDungeon.Core
             }
         }
 
-        public void ApplyHit(int damage, TileKind source)
+        public void ApplyHit(int damage)
         {
             // Show damage number
             var gm = GridManager.Instance;

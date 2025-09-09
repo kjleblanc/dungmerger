@@ -12,7 +12,7 @@ namespace MergeDungeon.Core
         public CraftingBook craftingBook;
 
         // Simple inventory of deposited ingredients
-        private readonly Dictionary<TileKind, int> _inventory = new();
+        private readonly Dictionary<TileDefinition, int> _inventory = new();
 
         public override void OnPointerClick(PointerEventData eventData)
         {
@@ -29,8 +29,10 @@ namespace MergeDungeon.Core
         {
             if (ingredient == null || ingredient == this) return false;
             // Add to inventory and refresh label
-            _inventory.TryGetValue(ingredient.kind, out int cur);
-            _inventory[ingredient.kind] = cur + 1;
+            var key = ingredient.def;
+            if (key == null) return false;
+            _inventory.TryGetValue(key, out int cur);
+            _inventory[key] = cur + 1;
             RefreshInventoryLabel();
             return true;
         }
@@ -46,7 +48,7 @@ namespace MergeDungeon.Core
             {
                 if (kv.Value <= 0) continue;
                 sb.Append('\n');
-                sb.Append(kv.Key);
+                sb.Append(kv.Key != null ? kv.Key.DisplayName : "?");
                 sb.Append(" x");
                 sb.Append(kv.Value);
                 shown++;
@@ -78,7 +80,9 @@ namespace MergeDungeon.Core
             foreach (var ing in recipe.ingredients)
             {
                 if (ing == null) return false;
-                _inventory.TryGetValue(ing.kind, out int have);
+                var def = ing.tile != null ? ing.tile.Resolve(GridManager.Instance != null ? GridManager.Instance.tileDatabase : null) : null;
+                if (def == null) return false;
+                _inventory.TryGetValue(def, out int have);
                 if (have < Mathf.Max(1, ing.count)) return false;
             }
             return true;
@@ -89,18 +93,26 @@ namespace MergeDungeon.Core
             foreach (var ing in recipe.ingredients)
             {
                 int need = Mathf.Max(1, ing.count);
-                _inventory.TryGetValue(ing.kind, out int have);
-                _inventory[ing.kind] = Mathf.Max(0, have - need);
+                var def = ing.tile != null ? ing.tile.Resolve(GridManager.Instance != null ? GridManager.Instance.tileDatabase : null) : null;
+                if (def == null) continue;
+                _inventory.TryGetValue(def, out int have);
+                _inventory[def] = Mathf.Max(0, have - need);
             }
         }
 
         private void ProduceOutput(CraftingRecipe recipe)
         {
             int count = Mathf.Max(1, recipe.outputCount);
+            var outputDef = recipe.output != null ? recipe.output.Resolve(GridManager.Instance != null ? GridManager.Instance.tileDatabase : null) : null;
+            if (outputDef == null) return;
             for (int i = 0; i < count; i++)
             {
                 // Spawn into a random empty cell for simplicity
-                GridManager.Instance.TrySpawnTileAtRandom(recipe.output);
+                var empty = GridManager.Instance.CollectEmptyCells();
+                if (empty.Count == 0) return;
+                var cell = empty[Random.Range(0, empty.Count)];
+                var t = GridManager.Instance.tileFactory != null ? GridManager.Instance.tileFactory.Create(outputDef) : null;
+                if (t != null) cell.SetTile(t);
             }
         }
     }

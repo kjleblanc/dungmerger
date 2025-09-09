@@ -34,11 +34,9 @@ namespace MergeDungeon.Core
         public Image healthFill; // optional health fill 0..1
         [Header("Spawning")]
         public AbilitySpawnTable spawnTable;
-        [SerializeField] private float spawnCooldown = 0.2f;
         private CanvasGroup _cg;
         private Transform _originalParent;
         private bool _dragging;
-        private float _lastSpawnTime = -999f;
 
         private void Awake()
         {
@@ -126,24 +124,32 @@ namespace MergeDungeon.Core
         {
             if (isDowned) return;
             if (stamina <= 0) return;
-            if (Time.time - _lastSpawnTime < spawnCooldown) return;
 
-            var kindToSpawn = GetSpawnKind();
-            if (currentCell != null)
-                GridManager.Instance.SpawnTileNear(currentCell, kindToSpawn);
-            else
-                GridManager.Instance.SpawnTileAtRandom(kindToSpawn);
-
+            var defToSpawn = GetSpawnDefinition();
+            if (defToSpawn != null && GridManager.Instance != null && GridManager.Instance.tileFactory != null)
+            {
+                var empty = GridManager.Instance.CollectEmptyCells();
+                if (empty.Count > 0)
+                {
+                    var cell = empty[Random.value < 1f ? Random.Range(0, empty.Count) : 0];
+                    var t = GridManager.Instance.tileFactory.Create(defToSpawn);
+                    if (t != null)
+                    {
+                        cell.SetTile(t);
+                    }
+                }
+            }
+            // Play visual use animation if available
             if (heroVisual != null)
             {
                 heroVisual.PlayUse();
             }
+            // Increment enemy advance meter
             if (GridManager.Instance != null)
             {
                 GridManager.Instance.RegisterHeroUse();
             }
             stamina -= 1;
-            _lastSpawnTime = Time.time;
             RefreshUI();
         }
 
@@ -154,18 +160,14 @@ namespace MergeDungeon.Core
             TrySpawnAbility();
         }
 
-        private TileKind GetSpawnKind()
+        private TileDefinition GetSpawnDefinition()
         {
             if (spawnTable != null)
             {
-                return spawnTable.RollForLevel(level);
+                return spawnTable.RollForLevel(GridManager.Instance != null ? GridManager.Instance.tileDatabase : null, level);
             }
             // Fallback if no table assigned
-            float specialChance = level >= 2 ? 0.3f : 0.0f;
-            if (kind == HeroKind.Warrior)
-                return Random.value < specialChance ? TileKind.Cleave : TileKind.SwordStrike;
-            else
-                return Random.value < specialChance ? TileKind.Fireball : TileKind.Spark;
+            return null;
         }
 
         public void OnBeginDrag(PointerEventData eventData)

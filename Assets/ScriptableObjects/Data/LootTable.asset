@@ -10,12 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48dd8dfbcc74ae043bb8d2612a629dfa, type: 3}
-  m_Name: SO_BatLootTable
+  m_Name: LootTable
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.LootTable
   minCount: 1
-  maxCount: 5
+  maxCount: 3
   entries:
-  - kind: 9
-    weight: 1
-  - kind: 10
-    weight: 1
+  - def: {fileID: 0}
+    weight: 0

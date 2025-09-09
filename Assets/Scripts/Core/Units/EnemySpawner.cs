@@ -12,6 +12,9 @@ namespace MergeDungeon.Core
         public LootTable slimeLootTable;
         public LootTable batLootTable;
         public TileBase tilePrefabForFallback;
+        [Header("Definitions")]
+        public TileDefinition slimeLootBagDef;
+        public TileDefinition batLootBagDef;
 
         private readonly List<EnemyController> _enemies = new();
         public int ActiveEnemyCount => _enemies.Count;
@@ -106,15 +109,23 @@ namespace MergeDungeon.Core
             var cell = enemy.currentCell;
             if (cell != null)
             {
+                var bagDef = enemy.kind == EnemyKind.Slime ? slimeLootBagDef : batLootBagDef;
                 LootTable table = enemy.kind == EnemyKind.Slime ? slimeLootTable : batLootTable;
-                if (lootBagPrefab != null && table != null)
+                if (bagDef != null && grid != null && grid.tileFactory != null)
                 {
-                    var bag = Instantiate(lootBagPrefab);
-                    bag.kind = enemy.kind == EnemyKind.Slime ? TileKind.LootBagSlime : TileKind.LootBagBat;
-                    bag.Init(table);
-                    bag.RefreshVisual();
-                    cell.SetEnemy(null);
-                    cell.SetTile(bag);
+                    var bagTile = grid.tileFactory.Create(bagDef);
+                    if (bagTile != null)
+                    {
+                        var lb = bagTile as LootBagTile;
+                        if (lb != null)
+                        {
+                            // Init to set roll count. If def has lootTable set, lb will use def rolls.
+                            lb.Init(null);
+                            lb.RefreshVisual();
+                        }
+                        cell.SetEnemy(null);
+                        cell.SetTile(bagTile);
+                    }
                 }
                 else
                 {
@@ -124,12 +135,11 @@ namespace MergeDungeon.Core
                         tableFallback = ScriptableObject.CreateInstance<LootTable>();
                         tableFallback.minCount = 1;
                         tableFallback.maxCount = 1;
-                        tableFallback.entries = new List<LootTable.Entry> { new LootTable.Entry { kind = TileKind.Goo, weight = 1f } };
+                        tableFallback.entries = new List<LootTable.Entry>();
                     }
                     if (lootBagPrefab != null)
                     {
                         var bag = Instantiate(lootBagPrefab);
-                        bag.kind = enemy.kind == EnemyKind.Slime ? TileKind.LootBagSlime : TileKind.LootBagBat;
                         bag.Init(tableFallback);
                         bag.RefreshVisual();
                         cell.SetEnemy(null);
@@ -138,7 +148,6 @@ namespace MergeDungeon.Core
                     else if (tilePrefabForFallback != null)
                     {
                         var t = Instantiate(tilePrefabForFallback);
-                        t.kind = enemy.kind == EnemyKind.Slime ? TileKind.LootBagSlime : TileKind.LootBagBat;
                         t.lootRemaining = tableFallback != null ? tableFallback.RollCount() : 1;
                         t.RefreshVisual();
                         cell.SetEnemy(null);

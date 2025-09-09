@@ -238,7 +238,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e92bd5bc0ee5fde43b9bf059fbb82410, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.TileBase
-  kind: 0
+  def: {fileID: 11400000, guid: f0b2978e87502cc4aa3217349ce96797, type: 2}
   currentCell: {fileID: 0}
+  lootRemaining: 0
   iconBg: {fileID: 5668592312224577073}
   label: {fileID: 7343064382040991631}
+  selectionImage: {fileID: 0}
+  selectionColor: {r: 1, g: 0.95, b: 0.3, a: 0.9}
+  scaleOnSelect: 1
+  selectionScale: 1.06

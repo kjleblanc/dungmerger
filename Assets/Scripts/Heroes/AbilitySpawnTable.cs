@@ -10,7 +10,7 @@ namespace MergeDungeon.Core
         [Serializable]
         public class WeightedKind
         {
-            public TileKind kind = TileKind.SwordStrike;
+            public TileReference tile;
             [Min(0f)] public float weight = 1f;
         }
 
@@ -23,7 +23,7 @@ namespace MergeDungeon.Core
 
         public List<Tier> tiers = new() { new Tier() };
 
-        public TileKind RollForLevel(int level)
+        public TileDefinition RollForLevel(TileDatabase database, int level)
         {
             Tier best = null;
             foreach (var t in tiers)
@@ -32,11 +32,11 @@ namespace MergeDungeon.Core
                 if (level >= t.minLevel && (best == null || t.minLevel > best.minLevel))
                     best = t;
             }
-            if (best == null || best.entries == null || best.entries.Count == 0) return TileKind.SwordStrike;
+            if (best == null || best.entries == null || best.entries.Count == 0) return null;
 
             float total = 0f;
             foreach (var e in best.entries) total += Mathf.Max(0f, e.weight);
-            if (total <= 0f) return best.entries[0].kind;
+            if (total <= 0f) return best.entries[0].tile != null ? best.entries[0].tile.Resolve(database) : null;
             float r = UnityEngine.Random.value * total;
             float acc = 0f;
             foreach (var e in best.entries)
@@ -44,9 +44,16 @@ namespace MergeDungeon.Core
                 float w = Mathf.Max(0f, e.weight);
                 if (w <= 0f) continue;
                 acc += w;
-                if (r <= acc) return e.kind;
+                if (r <= acc) return e.tile != null ? e.tile.Resolve(database) : null;
             }
-            return best.entries[best.entries.Count - 1].kind;
+            return best.entries[best.entries.Count - 1].tile != null ? best.entries[best.entries.Count - 1].tile.Resolve(database) : null;
+        }
+
+        public TileDefinition RollForLevel(int level)
+        {
+            // Convenience overload: uses GridManager's database if available
+            var db = GridManager.Instance != null ? GridManager.Instance.tileDatabase : null;
+            return RollForLevel(db, level);
         }
     }
 }

@@ -63,21 +63,21 @@ namespace MergeDungeon.Core
         public LootTable batLootTable;
 
         [Header("Data Assets")]
-        public MergeRules mergeRules;
-        public TileVisuals tileVisuals;
+        public TileDatabase tileDatabase;
 
         [Header("Hero Spawn Tables")]
         public AbilitySpawnTable warriorSpawnTable;
         public AbilitySpawnTable mageSpawnTable;
 
         [Header("Combat Data")]
-        public AbilityConfig abilityConfig;
+        // AbilityConfig deprecated; ability stats now live on TileDefinition
         public EnemyDatabase enemyDatabase;
         public FxController fxController; // optional, auto-add
         [Header("Visuals")]
         public EnemyVisualLibrary enemyVisualLibrary;
         public HeroVisualLibrary heroVisualLibrary;
         public event System.Action EnemyAdvanced;
+        public TileFactory tileFactory;
 
         // Extracted modules (auto-initialized)
         private AdvanceMeterController _advanceMeter;
@@ -100,33 +100,19 @@ namespace MergeDungeon.Core
 
         private void Start()
         {
-            InitDragLayer();
-            InitFx();
-            InitEnemySpawner();
-            InitTileService();
-            InitBoard();
-            InitMeter();
-        }
-
-        private void InitDragLayer()
-        {
+            // Initialize drag/fx modules
             _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
             if (_drag == null) _drag = gameObject.AddComponent<DragLayerController>();
-            _drag.InitializeFrom(this);
-        }
-
-        private void InitFx()
-        {
+            _drag.Setup();
             _fx = fxController != null ? fxController : GetComponent<FxController>();
             if (_fx == null) _fx = gameObject.AddComponent<FxController>();
-            _fx.InitializeFrom(this, _drag);
-        }
-
-        private void InitBoard()
-        {
+            if (_fx.dragLayerController == null) _fx.dragLayerController = _drag;
+            _fx.Setup();
+            // Initialize board controller
             _board = boardController != null ? boardController : GetComponent<BoardController>();
             if (_board == null) _board = gameObject.AddComponent<BoardController>();
-            _board.InitializeFrom(this);
+            _board.BuildBoard(cellPrefab);
+            _board.RecomputeGridCellSize(force:true);
             PlaceStartingHeroes();
             if (testEnemiesOnStart > 0)
             {
@@ -139,31 +125,32 @@ namespace MergeDungeon.Core
             {
                 StartCoroutine(SpawnEnemiesLoop());
             }
-        }
-
-        private void InitMeter()
-        {
+            // Initialize extracted modules
             _advanceMeter = GetComponent<AdvanceMeterController>();
             if (_advanceMeter == null) _advanceMeter = gameObject.AddComponent<AdvanceMeterController>();
-            _advanceMeter.InitializeFrom(this);
             RefreshEnemyAdvanceUI();
             _enemyMover = GetComponent<EnemyMover>();
             if (_enemyMover == null) _enemyMover = gameObject.AddComponent<EnemyMover>();
             _enemyMover.grid = this;
-        }
-
-        private void InitEnemySpawner()
-        {
+            // Initialize enemy spawner & tile service
             _enemySpawner = enemySpawner != null ? enemySpawner : GetComponent<EnemySpawner>();
             if (_enemySpawner == null) _enemySpawner = gameObject.AddComponent<EnemySpawner>();
             _enemySpawner.InitializeFrom(this);
-        }
-
-        private void InitTileService()
-        {
             _tileService = tileService != null ? tileService : GetComponent<TileService>();
             if (_tileService == null) _tileService = gameObject.AddComponent<TileService>();
-            _tileService.InitializeFrom(this);
+            _tileService.grid = this;
+            _tileService.tilePrefab = tilePrefab;
+            _tileService.tileDatabase = tileDatabase;
+            if (tileFactory == null) tileFactory = GetComponent<TileFactory>();
+            if (tileFactory == null) tileFactory = gameObject.AddComponent<TileFactory>();
+            // Pass defaults into factory
+            var tf = tileFactory;
+            if (tf != null)
+            {
+                var f = tf as TileFactory;
+                // assign via serialized fields through GetComponent won't expose private fields; rely on inspector setup
+            }
+            _tileService.tileFactory = tileFactory;
         }
 
         // Legacy setup methods removed; handled by dedicated controllers
@@ -316,7 +303,7 @@ namespace MergeDungeon.Core
             return true;
         }
 
-
+        // New: Merge trigger when a tile is dropped onto another tile of the same kind.
         // Implements 3/5 rule: 3-of-a-kind -> 1 upgraded; 5-of-a-kind -> 2 upgraded.
         public bool TryMergeOnDrop(TileBase source, TileBase target)
         {
@@ -338,48 +325,22 @@ namespace MergeDungeon.Core
             return true;
         }
 
-        public bool TrySpawnTileAtRandom(TileKind kind)
-        {
-            if (_tileService != null) return _tileService.TrySpawnTileAtRandom(kind);
-            var empty = CollectEmptyCells();
-            if (empty.Count == 0) return false;
-            var cell = empty[UnityEngine.Random.Range(0, empty.Count)];
-            var t = Instantiate(tilePrefab);
-            t.kind = kind;
-            t.RefreshVisual();
-            cell.SetTile(t);
-            return true;
-        }
-
-        public void SpawnTileAtRandom(TileKind kind)
-        {
-            if (_tileService != null) _tileService.SpawnTileAtRandom(kind);
-            else TrySpawnTileAtRandom(kind);
-        }
-
-        public bool TrySpawnTileNear(BoardCell origin, TileKind kind)
-        {
-            if (_tileService != null) return _tileService.TrySpawnTileNear(kind, origin);
-            return TrySpawnTileAtRandom(kind);
-        }
-
-        public void SpawnTileNear(BoardCell origin, TileKind kind)
-        {
-            if (_tileService != null) _tileService.SpawnTileNear(kind, origin);
-            else TrySpawnTileNear(origin, kind);
-        }
+        // Legacy enum-based spawns removed. Use TileFactory + TileDefinition via hero/crafting/loot systems.
 
         public bool TryFeedHero(TileBase tile, HeroController hero)
         {
             if (hero == null) return false;
-            if (tile.kind == TileKind.GooJelly)
+            if (tile.def != null && tile.def.canFeedHero)
             {
-                hero.GainStamina(2);
-                return true;
-            }
-            if (tile.kind == TileKind.MushroomStew)
-            {
-                hero.GainExp(1);
+                int v = Mathf.Max(0, tile.def.feedValue);
+                if (tile.def.feedTarget == TileDefinition.FeedTarget.Stamina)
+                {
+                    hero.GainStamina(v);
+                }
+                else
+                {
+                    hero.GainExp(v);
+                }
                 return true;
             }
             return false;
@@ -389,13 +350,19 @@ namespace MergeDungeon.Core
         {
             if (enemy == null) return false;
 
-            var entry = abilityConfig != null ? abilityConfig.Get(tile.kind) : null;
-            int damage = entry != null ? Mathf.Max(0, entry.damage) : 1;
-            var area = entry != null ? entry.area : AbilityArea.SingleTarget;
+            int damage = 1;
+            var area = AbilityArea.SingleTarget;
+
+            if (tile.def != null && tile.def.canAttack)
+            {
+                damage = Mathf.Max(0, tile.def.damage);
+                area = tile.def.area;
+            }
+            // No legacy ability config fallback
 
             if (area == AbilityArea.SingleTarget)
             {
-                enemy.ApplyHit(damage, tile.kind);
+                enemy.ApplyHit(damage);
                 return true;
             }
             else // CrossPlus area
@@ -418,7 +385,7 @@ namespace MergeDungeon.Core
             {
                 if (c != null && c.enemy != null)
                 {
-                    c.enemy.ApplyHit(damage, TileKind.Fireball);
+                    c.enemy.ApplyHit(damage);
                 }
             }
         }

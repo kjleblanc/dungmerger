@@ -6,22 +6,40 @@ namespace MergeDungeon.Core
 {
     public class LootBagTile : TileBase
     {
-        public LootTable lootTable;
         private bool _initialized;
 
         public void Init(LootTable table)
         {
-            lootTable = table;
-            lootRemaining = lootTable != null ? lootTable.RollCount() : lootRemaining;
+            if (def != null)
+            {
+                // prefer definition-based rolls
+                int min = Mathf.Max(0, def.minRolls);
+                int max = Mathf.Max(min, def.maxRolls);
+                lootRemaining = Random.Range(min, max + 1);
+            }
+            else
+            {
+                // fallback: use provided table
+                lootRemaining = table != null ? table.RollCount() : lootRemaining;
+            }
             _initialized = true;
             RefreshVisual();
         }
 
         private void Start()
         {
-            if (!_initialized && lootTable != null && lootRemaining <= 0)
+            if (!_initialized && lootRemaining <= 0)
             {
-                lootRemaining = lootTable.RollCount();
+                if (def != null)
+                {
+                    int min = Mathf.Max(0, def.minRolls);
+                    int max = Mathf.Max(min, def.maxRolls);
+                    lootRemaining = Random.Range(min, max + 1);
+                }
+                else
+                {
+                    // fallback attempt: cannot roll without a table, keep 0
+                }
                 RefreshVisual();
             }
         }
@@ -33,7 +51,6 @@ namespace MergeDungeon.Core
 
         public override void OnActivateTap()
         {
-            if (lootTable == null) return;
             if (lootRemaining <= 0)
             {
                 if (currentCell != null) currentCell.ClearTileIf(this);
@@ -41,8 +58,29 @@ namespace MergeDungeon.Core
                 return;
             }
 
-            var drop = lootTable.RollItem();
-            bool spawned = GridManager.Instance.TrySpawnTileAtRandom(drop);
+            bool spawned = false;
+            if (def != null && def.lootTable != null)
+            {
+                var dropDef = def.lootTable.RollItemDefinition(GridManager.Instance != null ? GridManager.Instance.tileDatabase : null);
+                if (dropDef != null && GridManager.Instance != null && GridManager.Instance.tileService != null)
+                {
+                    var empty = GridManager.Instance.CollectEmptyCells();
+                    if (empty.Count > 0)
+                    {
+                        var cell = empty[Random.Range(0, empty.Count)];
+                        var t = GridManager.Instance.tileFactory != null ? GridManager.Instance.tileFactory.Create(dropDef) : null;
+                        if (t != null)
+                        {
+                            cell.SetTile(t);
+                            spawned = true;
+                        }
+                    }
+                }
+            }
+            else if (GridManager.Instance != null)
+            {
+                // legacy fallback path unavailable without lootTable; do nothing
+            }
 
             if (spawned)
             {

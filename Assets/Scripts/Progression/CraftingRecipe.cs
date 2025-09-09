@@ -10,7 +10,7 @@ namespace MergeDungeon.Core
         [Serializable]
         public class Ingredient
         {
-            public TileKind kind = TileKind.Goo;
+            public TileReference tile;
             [Min(1)] public int count = 1;
         }
 
@@ -21,7 +21,7 @@ namespace MergeDungeon.Core
         public List<Ingredient> ingredients = new List<Ingredient>();
 
         [Header("Output")]
-        public TileKind output = TileKind.GooJelly;
+        public TileReference output;
         [Min(1)] public int outputCount = 1;
 
         [Header("Timing")]

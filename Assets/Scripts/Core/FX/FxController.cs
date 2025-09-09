@@ -39,12 +39,6 @@ namespace MergeDungeon.Core
             }
         }
 
-        public void InitializeFrom(GridManager grid, DragLayerController drag)
-        {
-            if (dragLayerController == null) dragLayerController = drag;
-            Setup();
-        }
-
         public void SpawnDamagePopup(RectTransform target, int amount, Color color)
         {
             Transform layer = fxLayer != null ? fxLayer : (dragLayerController != null ? dragLayerController.dragLayer : null);

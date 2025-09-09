@@ -11,7 +11,8 @@ namespace MergeDungeon.Core
     [RequireComponent(typeof(CanvasGroup))]
     public class TileBase : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, ISelectable
     {
-        public TileKind kind;
+        // Legacy field removed; tiles are identified by TileDefinition.
+        public TileDefinition def;
         [HideInInspector] public BoardCell currentCell;
         [Header("Loot Bag State")]
         public int lootRemaining = 0; // used only for LootBag kinds
@@ -72,73 +73,34 @@ namespace MergeDungeon.Core
 
         public void RefreshVisual()
         {
-            var gm = GridManager.Instance;
-            var visuals = gm != null ? gm.tileVisuals : null;
-
-            if (label != null)
+            if (def != null)
             {
-                string baseName = visuals != null ? (visuals.Get(kind)?.displayName ?? string.Empty) : string.Empty;
-                if (string.IsNullOrEmpty(baseName)) baseName = kind.ToString();
-                // Loot bag label overrides to show remaining count
-                switch (kind)
+                if (label != null)
                 {
-                    case TileKind.LootBagSlime:
-                        label.text = $"Slime Bag x{Mathf.Max(0, lootRemaining)}";
-                        break;
-                    case TileKind.LootBagBat:
-                        label.text = $"Bat Pouch x{Mathf.Max(0, lootRemaining)}";
-                        break;
-                    default:
-                        label.text = baseName;
-                        break;
+                    if (def.category == TileCategory.LootBag)
+                        label.text = $"{def.DisplayName} x{Mathf.Max(0, lootRemaining)}";
+                    else
+                        label.text = def.DisplayName;
                 }
-            }
-
-            if (iconBg != null)
-            {
-                var entry = visuals != null ? visuals.Get(kind) : null;
-                if (entry != null && entry.sprite != null)
+                if (iconBg != null)
                 {
-                    iconBg.sprite = entry.sprite;
-                    iconBg.color = Color.white;
-                    iconBg.preserveAspect = true;
+                    if (def.icon != null)
+                    {
+                        iconBg.sprite = def.icon;
+                        iconBg.color = def.iconTint;
+                        iconBg.preserveAspect = true;
+                    }
+                    else if (def.background != null)
+                    {
+                        iconBg.sprite = def.background;
+                        iconBg.color = def.backgroundTint;
+                        iconBg.preserveAspect = true;
+                    }
                 }
-                else
-                {
-                    iconBg.sprite = null;
-                    iconBg.color = entry != null ? entry.fallbackColor : ColorForKind(kind);
-                }
+                return;
             }
-        }
-
-        private string GetDisplayLabel()
-        {
-            switch (kind)
-            {
-                case TileKind.LootBagSlime: return $"Slime Bag x{Mathf.Max(0, lootRemaining)}";
-                case TileKind.LootBagBat: return $"Bat Pouch x{Mathf.Max(0, lootRemaining)}";
-                default: return kind.ToString();
-            }
-        }
-
-        private Color ColorForKind(TileKind k)
-        {
-            switch (k)
-            {
-                case TileKind.SwordStrike: return new Color(0.85f, 0.85f, 1f);
-                case TileKind.Cleave: return new Color(0.7f, 0.7f, 1f);
-                case TileKind.Spark: return new Color(1f, 0.9f, 0.7f);
-                case TileKind.Fireball: return new Color(1f, 0.7f, 0.4f);
-                case TileKind.Goo: return new Color(0.7f, 1f, 0.7f);
-                case TileKind.GooJelly: return new Color(0.5f, 1f, 0.5f);
-                case TileKind.Mushroom: return new Color(0.9f, 0.7f, 1f);
-                case TileKind.MushroomStew: return new Color(0.75f, 0.5f, 1f);
-                case TileKind.BatWing: return new Color(0.75f, 0.75f, 0.3f);
-                case TileKind.Bone: return new Color(0.85f, 0.85f, 0.85f);
-                case TileKind.LootBagSlime: return new Color(0.8f, 0.8f, 0.6f);
-                case TileKind.LootBagBat: return new Color(0.7f, 0.7f, 0.55f);
-                default: return Color.white;
-            }
+            if (label != null) label.text = string.Empty;
+            if (iconBg != null) { iconBg.sprite = null; iconBg.color = Color.white; }
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -271,7 +233,11 @@ namespace MergeDungeon.Core
             }
         }
 
-        
+        public void SetDefinition(TileDefinition d)
+        {
+            def = d;
+            RefreshVisual();
+        }
 
         private void ReturnToCell()
         {
