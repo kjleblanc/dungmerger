@@ -4,6 +4,7 @@ using UnityEngine.UI;
 
 namespace MergeDungeon.Core
 {
+    [ExecuteAlways]
     public class BoardController : MonoBehaviour
     {
         [Header("Board Size")]
@@ -15,15 +16,19 @@ namespace MergeDungeon.Core
         public GridLayoutGroup boardLayout;   // optional, to set constraints
         public bool autoFitCellSize = true;
 
+        [Header("Prefabs")]
+        public BoardCell cellPrefab;
+
         private Vector2 _lastBoardSize;
         private BoardCell[,] _cells;
         public bool IsBoardReady => _cells != null;
 
         // Configure via Inspector; no implicit seeding from GridManager
 
-        public void BuildBoard(BoardCell cellPrefab)
+        public void BuildBoard(BoardCell prefab = null)
         {
-            if (boardContainer == null || cellPrefab == null)
+            var cp = prefab != null ? prefab : cellPrefab;
+            if (boardContainer == null || cp == null)
             {
                 Debug.LogError("BoardController: Missing boardContainer or cellPrefab");
                 return;
@@ -42,18 +47,31 @@ namespace MergeDungeon.Core
 
             for (int i = boardContainer.childCount - 1; i >= 0; i--)
             {
-                Destroy(boardContainer.GetChild(i).gameObject);
+                var go = boardContainer.GetChild(i).gameObject;
+                if (Application.isPlaying)
+                    Destroy(go);
+                else
+                    DestroyImmediate(go);
             }
 
             for (int y = height - 1; y >= 0; y--)
             {
                 for (int x = 0; x < width; x++)
                 {
-                    var cell = Instantiate(cellPrefab, boardContainer);
+                    var cell = Instantiate(cp, boardContainer);
                     cell.x = x;
                     cell.y = y;
                     _cells[x, y] = cell;
                 }
+            }
+        }
+
+        private void OnValidate()
+        {
+            if (!Application.isPlaying)
+            {
+                BuildBoard(cellPrefab);
+                RecomputeGridCellSize(force: true);
             }
         }
 

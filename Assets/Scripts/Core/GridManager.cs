@@ -26,7 +26,6 @@ namespace MergeDungeon.Core
         public DragLayerController dragLayerController; // optional, auto-add
 
         [Header("Prefabs")]
-        public BoardCell cellPrefab;
         public TileBase tilePrefab; // generic tile
         public EnemyController enemyPrefab; // generic enemy
         public HeroController heroPrefab;   // generic hero
@@ -98,59 +97,68 @@ namespace MergeDungeon.Core
             Instance = this;
         }
 
-        private void Start()
+        private void OnEnable()
         {
-            // Initialize drag/fx modules
-            _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
-            if (_drag == null) _drag = gameObject.AddComponent<DragLayerController>();
-            _drag.Setup();
-            _fx = fxController != null ? fxController : GetComponent<FxController>();
-            if (_fx == null) _fx = gameObject.AddComponent<FxController>();
-            if (_fx.dragLayerController == null) _fx.dragLayerController = _drag;
-            _fx.Setup();
-            // Initialize board controller
             _board = boardController != null ? boardController : GetComponent<BoardController>();
             if (_board == null) _board = gameObject.AddComponent<BoardController>();
-            _board.BuildBoard(cellPrefab);
-            _board.RecomputeGridCellSize(force:true);
-            PlaceStartingHeroes();
-            if (testEnemiesOnStart > 0)
+            BuildBoard();
+            if (_board != null) _board.RecomputeGridCellSize(force: true);
+        }
+
+        private void Start()
+        {
+            if (Application.isPlaying)
             {
-                for (int i = 0; i < testEnemiesOnStart; i++)
+                // Initialize drag/fx modules
+                _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
+                if (_drag == null) _drag = gameObject.AddComponent<DragLayerController>();
+                _drag.Setup();
+                _fx = fxController != null ? fxController : GetComponent<FxController>();
+                if (_fx == null) _fx = gameObject.AddComponent<FxController>();
+                if (_fx.dragLayerController == null) _fx.dragLayerController = _drag;
+                _fx.Setup();
+                // Initialize board controller (board built in OnEnable)
+                _board = boardController != null ? boardController : GetComponent<BoardController>();
+                if (_board == null) _board = gameObject.AddComponent<BoardController>();
+                PlaceStartingHeroes();
+                if (testEnemiesOnStart > 0)
                 {
-                    TrySpawnEnemyTopRows();
+                    for (int i = 0; i < testEnemiesOnStart; i++)
+                    {
+                        TrySpawnEnemyTopRows();
+                    }
                 }
+                if (spawnEnemiesContinuously)
+                {
+                    StartCoroutine(SpawnEnemiesLoop());
+                }
+                // Initialize extracted modules
+                _advanceMeter = GetComponent<AdvanceMeterController>();
+                if (_advanceMeter == null) _advanceMeter = gameObject.AddComponent<AdvanceMeterController>();
+                RefreshEnemyAdvanceUI();
+                _enemyMover = GetComponent<EnemyMover>();
+                if (_enemyMover == null) _enemyMover = gameObject.AddComponent<EnemyMover>();
+                _enemyMover.grid = this;
+                // Initialize enemy spawner & tile service
+                _enemySpawner = enemySpawner != null ? enemySpawner : GetComponent<EnemySpawner>();
+                if (_enemySpawner == null) _enemySpawner = gameObject.AddComponent<EnemySpawner>();
+                _enemySpawner.InitializeFrom(this);
+                _tileService = tileService != null ? tileService : GetComponent<TileService>();
+                if (_tileService == null) _tileService = gameObject.AddComponent<TileService>();
+                _tileService.grid = this;
+                _tileService.tilePrefab = tilePrefab;
+                _tileService.tileDatabase = tileDatabase;
+                if (tileFactory == null) tileFactory = GetComponent<TileFactory>();
+                if (tileFactory == null) tileFactory = gameObject.AddComponent<TileFactory>();
+                // Pass defaults into factory
+                var tf = tileFactory;
+                if (tf != null)
+                {
+                    var f = tf as TileFactory;
+                    // assign via serialized fields through GetComponent won't expose private fields; rely on inspector setup
+                }
+                _tileService.tileFactory = tileFactory;
             }
-            if (spawnEnemiesContinuously)
-            {
-                StartCoroutine(SpawnEnemiesLoop());
-            }
-            // Initialize extracted modules
-            _advanceMeter = GetComponent<AdvanceMeterController>();
-            if (_advanceMeter == null) _advanceMeter = gameObject.AddComponent<AdvanceMeterController>();
-            RefreshEnemyAdvanceUI();
-            _enemyMover = GetComponent<EnemyMover>();
-            if (_enemyMover == null) _enemyMover = gameObject.AddComponent<EnemyMover>();
-            _enemyMover.grid = this;
-            // Initialize enemy spawner & tile service
-            _enemySpawner = enemySpawner != null ? enemySpawner : GetComponent<EnemySpawner>();
-            if (_enemySpawner == null) _enemySpawner = gameObject.AddComponent<EnemySpawner>();
-            _enemySpawner.InitializeFrom(this);
-            _tileService = tileService != null ? tileService : GetComponent<TileService>();
-            if (_tileService == null) _tileService = gameObject.AddComponent<TileService>();
-            _tileService.grid = this;
-            _tileService.tilePrefab = tilePrefab;
-            _tileService.tileDatabase = tileDatabase;
-            if (tileFactory == null) tileFactory = GetComponent<TileFactory>();
-            if (tileFactory == null) tileFactory = gameObject.AddComponent<TileFactory>();
-            // Pass defaults into factory
-            var tf = tileFactory;
-            if (tf != null)
-            {
-                var f = tf as TileFactory;
-                // assign via serialized fields through GetComponent won't expose private fields; rely on inspector setup
-            }
-            _tileService.tileFactory = tileFactory;
         }
 
         // Legacy setup methods removed; handled by dedicated controllers
@@ -199,7 +207,7 @@ namespace MergeDungeon.Core
                 Debug.LogError("GridManager: BoardController missing");
                 return;
             }
-            _board.BuildBoard(cellPrefab);
+            _board.BuildBoard();
         }
 
         public void RegisterHeroUse()
