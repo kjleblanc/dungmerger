@@ -26,7 +26,7 @@ namespace MergeDungeon.Core
 			if (eventSystem == null) eventSystem = EventSystem.current;
 			if (uiRaycaster == null)
 			{
-				var canvas = FindObjectOfType<Canvas>();
+				var canvas = FindFirstObjectByType<Canvas>();
 				if (canvas != null) uiRaycaster = canvas.GetComponent<GraphicRaycaster>();
 			}
 		}

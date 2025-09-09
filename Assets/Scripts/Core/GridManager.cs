@@ -100,19 +100,33 @@ namespace MergeDungeon.Core
 
         private void Start()
         {
-            // Initialize drag/fx modules
+            InitDragLayer();
+            InitFx();
+            InitEnemySpawner();
+            InitTileService();
+            InitBoard();
+            InitMeter();
+        }
+
+        private void InitDragLayer()
+        {
             _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
             if (_drag == null) _drag = gameObject.AddComponent<DragLayerController>();
-            _drag.Setup();
+            _drag.InitializeFrom(this);
+        }
+
+        private void InitFx()
+        {
             _fx = fxController != null ? fxController : GetComponent<FxController>();
             if (_fx == null) _fx = gameObject.AddComponent<FxController>();
-            if (_fx.dragLayerController == null) _fx.dragLayerController = _drag;
-            _fx.Setup();
-            // Initialize board controller
+            _fx.InitializeFrom(this, _drag);
+        }
+
+        private void InitBoard()
+        {
             _board = boardController != null ? boardController : GetComponent<BoardController>();
             if (_board == null) _board = gameObject.AddComponent<BoardController>();
-            _board.BuildBoard(cellPrefab);
-            _board.RecomputeGridCellSize(force:true);
+            _board.InitializeFrom(this);
             PlaceStartingHeroes();
             if (testEnemiesOnStart > 0)
             {
@@ -125,22 +139,31 @@ namespace MergeDungeon.Core
             {
                 StartCoroutine(SpawnEnemiesLoop());
             }
-            // Initialize extracted modules
+        }
+
+        private void InitMeter()
+        {
             _advanceMeter = GetComponent<AdvanceMeterController>();
             if (_advanceMeter == null) _advanceMeter = gameObject.AddComponent<AdvanceMeterController>();
+            _advanceMeter.InitializeFrom(this);
             RefreshEnemyAdvanceUI();
             _enemyMover = GetComponent<EnemyMover>();
             if (_enemyMover == null) _enemyMover = gameObject.AddComponent<EnemyMover>();
             _enemyMover.grid = this;
-            // Initialize enemy spawner & tile service
+        }
+
+        private void InitEnemySpawner()
+        {
             _enemySpawner = enemySpawner != null ? enemySpawner : GetComponent<EnemySpawner>();
             if (_enemySpawner == null) _enemySpawner = gameObject.AddComponent<EnemySpawner>();
             _enemySpawner.InitializeFrom(this);
+        }
+
+        private void InitTileService()
+        {
             _tileService = tileService != null ? tileService : GetComponent<TileService>();
             if (_tileService == null) _tileService = gameObject.AddComponent<TileService>();
-            _tileService.grid = this;
-            _tileService.tilePrefab = tilePrefab;
-            _tileService.mergeRules = mergeRules;
+            _tileService.InitializeFrom(this);
         }
 
         // Legacy setup methods removed; handled by dedicated controllers
@@ -293,7 +316,7 @@ namespace MergeDungeon.Core
             return true;
         }
 
-        // New: Merge trigger when a tile is dropped onto another tile of the same kind.
+
         // Implements 3/5 rule: 3-of-a-kind -> 1 upgraded; 5-of-a-kind -> 2 upgraded.
         public bool TryMergeOnDrop(TileBase source, TileBase target)
         {
@@ -332,6 +355,18 @@ namespace MergeDungeon.Core
         {
             if (_tileService != null) _tileService.SpawnTileAtRandom(kind);
             else TrySpawnTileAtRandom(kind);
+        }
+
+        public bool TrySpawnTileNear(BoardCell origin, TileKind kind)
+        {
+            if (_tileService != null) return _tileService.TrySpawnTileNear(kind, origin);
+            return TrySpawnTileAtRandom(kind);
+        }
+
+        public void SpawnTileNear(BoardCell origin, TileKind kind)
+        {
+            if (_tileService != null) _tileService.SpawnTileNear(kind, origin);
+            else TrySpawnTileNear(origin, kind);
         }
 
         public bool TryFeedHero(TileBase tile, HeroController hero)

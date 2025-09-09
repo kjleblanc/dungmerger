@@ -34,9 +34,11 @@ namespace MergeDungeon.Core
         public Image healthFill; // optional health fill 0..1
         [Header("Spawning")]
         public AbilitySpawnTable spawnTable;
+        [SerializeField] private float spawnCooldown = 0.2f;
         private CanvasGroup _cg;
         private Transform _originalParent;
         private bool _dragging;
+        private float _lastSpawnTime = -999f;
 
         private void Awake()
         {
@@ -124,20 +126,24 @@ namespace MergeDungeon.Core
         {
             if (isDowned) return;
             if (stamina <= 0) return;
+            if (Time.time - _lastSpawnTime < spawnCooldown) return;
 
             var kindToSpawn = GetSpawnKind();
-            GridManager.Instance.SpawnTileAtRandom(kindToSpawn);
-            // Play visual use animation if available
+            if (currentCell != null)
+                GridManager.Instance.SpawnTileNear(currentCell, kindToSpawn);
+            else
+                GridManager.Instance.SpawnTileAtRandom(kindToSpawn);
+
             if (heroVisual != null)
             {
                 heroVisual.PlayUse();
             }
-            // Increment enemy advance meter
             if (GridManager.Instance != null)
             {
                 GridManager.Instance.RegisterHeroUse();
             }
             stamina -= 1;
+            _lastSpawnTime = Time.time;
             RefreshUI();
         }
 

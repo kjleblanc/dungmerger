@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -15,6 +16,12 @@ namespace MergeDungeon.Core
             if (grid == null) grid = GridManager.Instance;
         }
 
+        public void InitializeFrom(GridManager g)
+        {
+            grid = g;
+            if (tilePrefab == null) tilePrefab = g.tilePrefab;
+            if (mergeRules == null) mergeRules = g.mergeRules;
+        }
         public bool TryPlaceTileInCell(TileBase tile, BoardCell cell)
         {
             if (cell == null) return false;
@@ -42,6 +49,72 @@ namespace MergeDungeon.Core
         public void SpawnTileAtRandom(TileKind kind)
         {
             TrySpawnTileAtRandom(kind);
+        }
+
+                public bool TrySpawnTileNear(TileKind kind, BoardCell origin)
+        {
+            if (grid == null || origin == null) return TrySpawnTileAtRandom(kind);
+
+            var visited = new HashSet<BoardCell>();
+            var q = new Queue<BoardCell>();
+            visited.Add(origin);
+            q.Enqueue(origin);
+
+            while (q.Count > 0)
+            {
+                var c = q.Dequeue();
+                if (c.IsFreeForTile())
+                {
+                    var tile = Instantiate(tilePrefab);
+                    tile.kind = kind;
+                    tile.RefreshVisual();
+                    var rt = tile.GetComponent<RectTransform>();
+                    Transform layer = grid.dragLayer != null ? grid.dragLayer : c.rectTransform.parent;
+                    rt.SetParent(layer, worldPositionStays: false);
+                    rt.position = origin.rectTransform.position;
+                    StartCoroutine(MoveTileToCell(tile, c));
+                    return true;
+                }
+
+                Enqueue(c.x + 1, c.y);
+                Enqueue(c.x - 1, c.y);
+                Enqueue(c.x, c.y + 1);
+                Enqueue(c.x, c.y - 1);
+            }
+
+            return false;
+
+            void Enqueue(int x, int y)
+            {
+                var n = grid.GetCell(x, y);
+                if (n != null && !visited.Contains(n))
+                {
+                    visited.Add(n);
+                    q.Enqueue(n);
+                }
+            }
+        }
+
+        public void SpawnTileNear(TileKind kind, BoardCell origin)
+        {
+            TrySpawnTileNear(kind, origin);
+        }
+
+        private IEnumerator MoveTileToCell(TileBase tile, BoardCell cell)
+        {
+            var rt = tile.GetComponent<RectTransform>();
+            Vector3 start = rt.position;
+            Vector3 end = cell.rectTransform.position;
+            float dur = 0.15f;
+            float elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / dur);
+                rt.position = Vector3.Lerp(start, end, t);
+                yield return null;
+            }
+            cell.SetTile(tile);
         }
 
         public bool TryMergeOnDrop(TileBase source, TileBase target)

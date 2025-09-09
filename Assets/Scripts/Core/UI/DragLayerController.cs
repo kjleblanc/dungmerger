@@ -25,6 +25,11 @@ namespace MergeDungeon.Core
                 cg.interactable = false;
             }
         }
+
+        public void InitializeFrom(GridManager grid)
+        {
+            Setup();
+        }
     }
 }
 

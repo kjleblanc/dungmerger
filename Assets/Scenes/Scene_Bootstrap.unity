@@ -1190,7 +1190,7 @@ MonoBehaviour:
   heroesBottomRow: 0
   restrictHeroesToBottomRow: 1
   spawnEnemiesContinuously: 0
-  testEnemiesOnStart: 0
+  testEnemiesOnStart: 1
   boardController: {fileID: 1309035646}
   enemySpawner: {fileID: 513218070}
   tileService: {fileID: 7095150}

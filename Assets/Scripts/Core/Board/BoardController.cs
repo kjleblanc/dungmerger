@@ -21,6 +21,12 @@ namespace MergeDungeon.Core
 
         // Configure via Inspector; no implicit seeding from GridManager
 
+        public void InitializeFrom(GridManager grid)
+        {
+            BuildBoard(grid.cellPrefab);
+            RecomputeGridCellSize(force: true);
+        }
+
         public void BuildBoard(BoardCell cellPrefab)
         {
             if (boardContainer == null || cellPrefab == null)
