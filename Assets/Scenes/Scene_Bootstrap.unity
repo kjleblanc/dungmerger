@@ -152,6 +152,38 @@ MonoBehaviour:
   tilePrefab: {fileID: 9041613371303601300, guid: 3b1dc137e23ca1e49931cc3777dcde38, type: 3}
   tileDatabase: {fileID: 11400000, guid: 50297c63071016f489c03ff7f66b9286, type: 2}
   tileFactory: {fileID: 812644177}
+  mergeTravelDuration: 0.2
+  mergeStaggerRange: 0.05
+  arcHeightFactor: 0.15
+  moveCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  scaleCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  anticipationOnOrigin: 1
+  anticipationScale: 1.08
+  anticipationDuration: 0.07
+  hitStopEnabled: 1
+  hitStopDuration: 0.06
+  microShakeEnabled: 1
+  microShakeAmplitude: 8
+  microShakeDuration: 0.37
+  shockwavePrefab: {fileID: 0}
+  popSpawnOnMerge: 1
+  spawnPopDuration: 0.2
+  spawnPopCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!4 &7095151
 Transform:
   m_ObjectHideFlags: 0
@@ -2703,7 +2735,7 @@ MonoBehaviour:
   m_ChildAlignment: 4
   m_StartCorner: 0
   m_StartAxis: 0
-  m_CellSize: {x: 96.59999, y: 96.59999}
+  m_CellSize: {x: 212, y: 212}
   m_Spacing: {x: 1, y: 1}
   m_Constraint: 1
   m_ConstraintCount: 5

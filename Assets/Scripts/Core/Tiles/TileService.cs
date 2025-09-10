@@ -12,9 +12,58 @@ namespace MergeDungeon.Core
         public TileDatabase tileDatabase;
         public TileFactory tileFactory;
 
+        [Header("Merge Animation")]
+        public float mergeTravelDuration = 0.2f;
+        [Tooltip("Random per-tile start offset (seconds)")]
+        public float mergeStaggerRange = 0.05f;
+        [Tooltip("Arc offset as a fraction of distance (0-0.5)")]
+        [Range(0f, 0.5f)] public float arcHeightFactor = 0.15f;
+        public AnimationCurve moveCurve = null;   // 0->1 easing for movement
+        public AnimationCurve scaleCurve = null;  // 1->0 curve for consumed tiles
+        [Header("Anticipation")]
+        public bool anticipationOnOrigin = true;
+        public float anticipationScale = 1.08f;
+        public float anticipationDuration = 0.07f;
+
+        [Header("Impact FX")]
+        public bool hitStopEnabled = true;
+        public float hitStopDuration = 0.06f;
+        public bool microShakeEnabled = true;
+        public float microShakeAmplitude = 8f; // px
+        public float microShakeDuration = 0.1f;
+        public GameObject shockwavePrefab; // optional UI Image/circle prefab
+
+        [Header("Spawn Visuals")]
+        public bool popSpawnOnMerge = true;
+        public float spawnPopDuration = 0.2f;
+        public AnimationCurve spawnPopCurve = null; // 0->1 with overshoot
+
         private void Awake()
         {
             if (grid == null) grid = GridManager.Instance;
+            // Default curves if not assigned
+            if (moveCurve == null || moveCurve.keys == null || moveCurve.keys.Length == 0)
+            {
+                moveCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+            }
+            if (scaleCurve == null || scaleCurve.keys == null || scaleCurve.keys.Length == 0)
+            {
+                // Starts at 1.0, dips slightly (compression), then to 0
+                scaleCurve = new AnimationCurve(
+                    new Keyframe(0f, 1f),
+                    new Keyframe(0.5f, 0.85f),
+                    new Keyframe(1f, 0f)
+                );
+            }
+            if (spawnPopCurve == null || spawnPopCurve.keys == null || spawnPopCurve.keys.Length == 0)
+            {
+                // 0 -> 1.12 -> 1.0
+                spawnPopCurve = new AnimationCurve(
+                    new Keyframe(0f, 0f),
+                    new Keyframe(0.6f, 1.12f),
+                    new Keyframe(1f, 1f)
+                );
+            }
         }
 
         public bool TryPlaceTileInCell(TileBase tile, BoardCell cell)
@@ -101,39 +150,76 @@ namespace MergeDungeon.Core
             var rts = new List<RectTransform>();
             var startPos = new List<Vector3>();
             var startScale = new List<Vector3>();
+            var controls = new List<Vector3>();
+            var offsets = new List<float>();
 
+            // Optional anticipation pulse on the origin tile
+            if (anticipationOnOrigin && origin != null && origin.tile != null)
+            {
+                var ort = origin.tile.GetComponent<RectTransform>();
+                if (ort != null) StartCoroutine(PulseScale(ort, anticipationScale, anticipationDuration));
+            }
+
+            // Prepare moving tiles
             foreach (var cell in consumed)
             {
                 if (cell != null && cell.tile != null)
                 {
                     var rt = cell.tile.GetComponent<RectTransform>();
+                    if (rt == null) continue;
                     rts.Add(rt);
                     startPos.Add(rt.position);
                     startScale.Add(rt.localScale);
+                    // Compute arc control point
+                    Vector3 p0 = rt.position;
+                    Vector3 p1 = origin.rectTransform.position;
+                    Vector3 dir = (p1 - p0);
+                    float dist = dir.magnitude;
+                    Vector3 mid = p0 + dir * 0.5f;
+                    Vector3 perp = Vector3.Cross(dir.normalized, Vector3.forward).normalized; // 2D UI, Z-forward
+                    float sign = Random.value < 0.5f ? -1f : 1f;
+                    float arc = Mathf.Clamp01(arcHeightFactor) * dist;
+                    controls.Add(mid + perp * arc * sign);
+                    // Stagger per tile
+                    offsets.Add(Random.Range(0f, Mathf.Max(0f, mergeStaggerRange)));
+                    // Reparent and draw above
                     rt.SetParent(dragLayer, true);
+                    rt.SetAsLastSibling();
+                    // Clear tile->cell link to block further interactions during anim
                     cell.tile.currentCell = null;
                 }
             }
 
-            float duration = 0.2f;
-            float t = 0f;
+            // Animate along arcs with easing and scaling down
+            float elapsed = 0f;
             Vector3 targetPos = origin.rectTransform.position;
-            while (t < duration)
+            float duration = Mathf.Max(0.01f, mergeTravelDuration);
+            while (elapsed < duration + (offsets.Count > 0 ? Mathf.Max(0f, Mathf.Max(offsets.ToArray())) : 0f))
             {
-                t += Time.deltaTime;
-                float lerp = t / duration;
+                elapsed += Time.deltaTime;
                 for (int i = 0; i < rts.Count; i++)
                 {
                     var rt = rts[i];
-                    if (rt != null)
-                    {
-                        rt.position = Vector3.Lerp(startPos[i], targetPos, lerp);
-                        rt.localScale = Vector3.Lerp(startScale[i], Vector3.zero, lerp);
-                    }
+                    if (rt == null) continue;
+                    float u = Mathf.Clamp01((elapsed - offsets[i]) / duration);
+                    if (u <= 0f) continue; // hasn't started
+                    float tt = moveCurve != null ? moveCurve.Evaluate(u) : u;
+                    // Quadratic Bezier
+                    Vector3 p0 = startPos[i];
+                    Vector3 c = controls[i];
+                    Vector3 p1 = targetPos;
+                    Vector3 a = Vector3.Lerp(p0, c, tt);
+                    Vector3 b = Vector3.Lerp(c, p1, tt);
+                    rt.position = Vector3.Lerp(a, b, tt);
+                    // Scale via curve (1->0)
+                    float s = scaleCurve != null ? Mathf.Max(0f, scaleCurve.Evaluate(u)) : (1f - u);
+                    Vector3 baseScale = startScale[i];
+                    rt.localScale = new Vector3(baseScale.x * s, baseScale.y * s, baseScale.z);
                 }
                 yield return null;
             }
 
+            // Cleanup consumed tiles
             foreach (var cell in consumed)
             {
                 if (cell != null && cell.tile != null)
@@ -143,15 +229,45 @@ namespace MergeDungeon.Core
                 }
             }
 
+            // Impact FX (optional)
+            if (hitStopEnabled)
+            {
+                float prev = Time.timeScale;
+                Time.timeScale = 0f;
+                yield return new WaitForSecondsRealtime(Mathf.Max(0f, hitStopDuration));
+                Time.timeScale = prev;
+            }
+
+            // Board-wide shake removed; shake will be applied to spawned output tile instead.
+
+            // Optional shockwave prefab at impact point
+            if (shockwavePrefab != null && origin != null && origin.rectTransform != null)
+            {
+                Transform parent = GetFxLayerParent();
+                var sw = Instantiate(shockwavePrefab, parent != null ? parent : origin.rectTransform.parent);
+                var rt = sw.GetComponent<RectTransform>();
+                if (rt != null)
+                {
+                    rt.position = origin.rectTransform.position;
+                    rt.SetAsLastSibling();
+                }
+            }
+
             onComplete?.Invoke();
         }
 
         private void FinalizeMerge(BoardCell originCellDef, TileDefinition.MergeRule defRule, List<BoardCell> consumeCellsDef)
         {
+            // Remove existing tile at origin, if any
+            if (originCellDef != null && originCellDef.tile != null)
+            {
+                Destroy(originCellDef.tile.gameObject);
+                originCellDef.tile = null;
+            }
             var outputDef = defRule.output;
             int defToProduce = Mathf.Max(1, defRule.outputCount);
 
-            void PlaceUpgradeAtDef(BoardCell cell)
+            void PlaceUpgradeAtDef(BoardCell cell, bool shake)
             {
                 TileBase nt = tileFactory != null ? tileFactory.Create(outputDef) : Instantiate(tilePrefab);
                 if (nt != null)
@@ -159,10 +275,20 @@ namespace MergeDungeon.Core
                     if (nt.def == null && outputDef != null) nt.SetDefinition(outputDef);
                     nt.RefreshVisual();
                     cell.SetTile(nt);
+                    if (popSpawnOnMerge)
+                    {
+                        var rt = nt.GetComponent<RectTransform>();
+                        if (rt != null) StartCoroutine(SpawnPop(rt, spawnPopDuration));
+                    }
+                    if (microShakeEnabled && shake)
+                    {
+                        var rt = nt.GetComponent<RectTransform>();
+                        if (rt != null) StartCoroutine(MicroShake(rt, microShakeAmplitude, microShakeDuration));
+                    }
                 }
             }
 
-            PlaceUpgradeAtDef(originCellDef);
+            PlaceUpgradeAtDef(originCellDef, true);
             if (defToProduce > 1)
             {
                 BoardCell second = null;
@@ -182,9 +308,98 @@ namespace MergeDungeon.Core
                 }
                 if (second != null)
                 {
-                    PlaceUpgradeAtDef(second);
+                    PlaceUpgradeAtDef(second, false);
                 }
             }
+        }
+
+        // --- Helpers ---
+        private IEnumerator PulseScale(RectTransform rt, float targetScale, float duration)
+        {
+            if (rt == null) yield break;
+            float dur = Mathf.Max(0.01f, duration);
+            Vector3 start = rt.localScale;
+            Vector3 peak = start * Mathf.Max(1f, targetScale);
+            float half = dur * 0.5f;
+            float t = 0f;
+            // Up
+            while (t < half)
+            {
+                t += Time.deltaTime;
+                float u = Mathf.Clamp01(t / half);
+                rt.localScale = Vector3.Lerp(start, peak, u);
+                yield return null;
+            }
+            // Down
+            t = 0f;
+            while (t < half)
+            {
+                t += Time.deltaTime;
+                float u = Mathf.Clamp01(t / half);
+                rt.localScale = Vector3.Lerp(peak, start, u);
+                yield return null;
+            }
+            rt.localScale = start;
+        }
+
+        private IEnumerator MicroShake(RectTransform rt, float amplitude, float duration)
+        {
+            if (rt == null) yield break;
+            Vector2 original = rt.anchoredPosition;
+            float dur = Mathf.Max(0.01f, duration);
+            float t = 0f;
+            while (t < dur)
+            {
+                t += Time.unscaledDeltaTime;
+                float damper = 1f - Mathf.Clamp01(t / dur);
+                float ax = (Random.value * 2f - 1f) * amplitude * damper;
+                float ay = (Random.value * 2f - 1f) * amplitude * damper;
+                rt.anchoredPosition = original + new Vector2(ax, ay);
+                yield return null;
+            }
+            rt.anchoredPosition = original;
+        }
+
+        private IEnumerator SpawnPop(RectTransform rt, float duration)
+        {
+            if (rt == null) yield break;
+            float dur = Mathf.Max(0.01f, duration);
+            Vector3 baseScale = rt.localScale;
+            // Start from zero scale
+            rt.localScale = Vector3.zero;
+            float t = 0f;
+            while (t < dur)
+            {
+                t += Time.deltaTime;
+                float u = Mathf.Clamp01(t / dur);
+                float s = spawnPopCurve != null ? spawnPopCurve.Evaluate(u) : u;
+                // Overshoot handled in curve (e.g., 1.12)
+                rt.localScale = baseScale * Mathf.Max(0f, s);
+                yield return null;
+            }
+            rt.localScale = baseScale;
+        }
+
+        private RectTransform GetShakeTarget()
+        {
+            if (grid != null && grid.boardController != null && grid.boardController.boardContainer != null)
+                return grid.boardController.boardContainer;
+            if (grid != null && grid.dragLayer != null)
+                return grid.dragLayer as RectTransform;
+            return null;
+        }
+
+        private Transform GetFxLayerParent()
+        {
+            // Prefer FX layer if available; otherwise default to drag layer
+            var gm = GridManager.Instance;
+            if (gm != null)
+            {
+                var fx = gm.fxController;
+                if (fx != null && fx.fxLayer != null) return fx.fxLayer;
+                if (gm.dragLayer != null) return gm.dragLayer;
+            }
+            return null;
         }
 
         public List<BoardCell> CollectConnectedTilesOfDefinition(BoardCell originCell, TileDefinition def, TileDefinition mergesWith)
