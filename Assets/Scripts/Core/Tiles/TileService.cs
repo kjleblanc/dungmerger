@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -42,9 +43,7 @@ namespace MergeDungeon.Core
 
             bool canMerge;
             TileDefinition.MergeRule defRule = null;
-            TileDefinition outputDef = null;
             int defToConsume = 0;
-            int defToProduce = 0;
 
             if (sourceDef != null && targetDef != null)
             {
@@ -71,15 +70,7 @@ namespace MergeDungeon.Core
                 }
 
                 defToConsume = Mathf.Max(2, defRule.countToConsume);
-                defToProduce = Mathf.Max(1, defRule.outputCount);
-                outputDef = defRule.output;
-
-                if (source.currentCell != null)
-                {
-                    source.currentCell.ClearTileIf(source);
-                }
-                Destroy(source.gameObject);
-
+                
                 var orderedDef = groupDef.OrderBy(c => Manhattan(c, originCellDef)).ToList();
                 var consumeCellsDef = new List<BoardCell>();
                 for (int i = 0; i < orderedDef.Count && consumeCellsDef.Count < (defToConsume - 1); i++)
@@ -88,56 +79,112 @@ namespace MergeDungeon.Core
                     if (c != null && c.tile != null)
                         consumeCellsDef.Add(c);
                 }
-
-                foreach (var c in consumeCellsDef)
+                var allConsumed = new List<BoardCell>();
+                if (source.currentCell != null)
                 {
-                    if (c.tile != null)
-                    {
-                        Destroy(c.tile.gameObject);
-                        c.tile = null;
-                    }
+                    allConsumed.Add(source.currentCell);
                 }
+                allConsumed.AddRange(consumeCellsDef);
 
-                void PlaceUpgradeAtDef(BoardCell cell)
-                {
-                    TileBase nt = tileFactory != null ? tileFactory.Create(outputDef) : Instantiate(tilePrefab);
-                    if (nt != null)
-                    {
-                        if (nt.def == null && outputDef != null) nt.SetDefinition(outputDef);
-                        nt.RefreshVisual();
-                        cell.SetTile(nt);
-                    }
-                }
-
-                PlaceUpgradeAtDef(originCellDef);
-                if (defToProduce > 1)
-                {
-                    BoardCell second = null;
-                    foreach (var c in consumeCellsDef)
-                    {
-                        if (c != null && c != originCellDef)
-                        {
-                            second = c;
-                            break;
-                        }
-                    }
-                    if (second == null)
-                    {
-                        var empties = grid.CollectEmptyCells();
-                        if (empties.Count > 0)
-                            second = empties[Random.Range(0, empties.Count)];
-                    }
-                    if (second != null)
-                    {
-                        PlaceUpgradeAtDef(second);
-                    }
-                }
+                StartCoroutine(AnimateMerge(originCellDef, allConsumed, () => FinalizeMerge(originCellDef, defRule, consumeCellsDef)));
 
                 return true;
             }
 
             // Legacy merge path removed. Only definition-driven merges are supported now.
             return false;
+        }
+
+        public IEnumerator AnimateMerge(BoardCell origin, List<BoardCell> consumed, System.Action onComplete)
+        {
+            var dragLayer = GridManager.Instance.dragLayer;
+            var rts = new List<RectTransform>();
+            var startPos = new List<Vector3>();
+            var startScale = new List<Vector3>();
+
+            foreach (var cell in consumed)
+            {
+                if (cell != null && cell.tile != null)
+                {
+                    var rt = cell.tile.GetComponent<RectTransform>();
+                    rts.Add(rt);
+                    startPos.Add(rt.position);
+                    startScale.Add(rt.localScale);
+                    rt.SetParent(dragLayer, true);
+                    cell.tile.currentCell = null;
+                }
+            }
+
+            float duration = 0.2f;
+            float t = 0f;
+            Vector3 targetPos = origin.rectTransform.position;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float lerp = t / duration;
+                for (int i = 0; i < rts.Count; i++)
+                {
+                    var rt = rts[i];
+                    if (rt != null)
+                    {
+                        rt.position = Vector3.Lerp(startPos[i], targetPos, lerp);
+                        rt.localScale = Vector3.Lerp(startScale[i], Vector3.zero, lerp);
+                    }
+                }
+                yield return null;
+            }
+
+            foreach (var cell in consumed)
+            {
+                if (cell != null && cell.tile != null)
+                {
+                    Destroy(cell.tile.gameObject);
+                    cell.tile = null;
+                }
+            }
+
+            onComplete?.Invoke();
+        }
+
+        private void FinalizeMerge(BoardCell originCellDef, TileDefinition.MergeRule defRule, List<BoardCell> consumeCellsDef)
+        {
+            var outputDef = defRule.output;
+            int defToProduce = Mathf.Max(1, defRule.outputCount);
+
+            void PlaceUpgradeAtDef(BoardCell cell)
+            {
+                TileBase nt = tileFactory != null ? tileFactory.Create(outputDef) : Instantiate(tilePrefab);
+                if (nt != null)
+                {
+                    if (nt.def == null && outputDef != null) nt.SetDefinition(outputDef);
+                    nt.RefreshVisual();
+                    cell.SetTile(nt);
+                }
+            }
+
+            PlaceUpgradeAtDef(originCellDef);
+            if (defToProduce > 1)
+            {
+                BoardCell second = null;
+                foreach (var c in consumeCellsDef)
+                {
+                    if (c != null && c != originCellDef)
+                    {
+                        second = c;
+                        break;
+                    }
+                }
+                if (second == null)
+                {
+                    var empties = grid.CollectEmptyCells();
+                    if (empties.Count > 0)
+                        second = empties[Random.Range(0, empties.Count)];
+                }
+                if (second != null)
+                {
+                    PlaceUpgradeAtDef(second);
+                }
+            }
         }
 
         public List<BoardCell> CollectConnectedTilesOfDefinition(BoardCell originCell, TileDefinition def, TileDefinition mergesWith)
