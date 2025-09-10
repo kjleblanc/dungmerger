@@ -419,6 +419,27 @@ namespace MergeDungeon.Core
             return _board != null ? _board.CollectEmptyCells() : new List<BoardCell>();
         }
 
+        // Find the nearest empty cell to a given origin using Manhattan distance
+        public BoardCell FindNearestEmptyCell(BoardCell origin)
+        {
+            if (origin == null || _board == null) return null;
+            var empties = CollectEmptyCells();
+            if (empties == null || empties.Count == 0) return null;
+
+            BoardCell best = null;
+            int bestDist = int.MaxValue;
+            foreach (var c in empties)
+            {
+                int dist = Mathf.Abs(c.x - origin.x) + Mathf.Abs(c.y - origin.y);
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    best = c;
+                }
+            }
+            return best;
+        }
+
         // Merge logic and BFS helpers moved to TileService
 
         

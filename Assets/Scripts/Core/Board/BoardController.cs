@@ -4,7 +4,6 @@ using UnityEngine.UI;
 
 namespace MergeDungeon.Core
 {
-    [ExecuteAlways]
     public class BoardController : MonoBehaviour
     {
         [Header("Board Size")]

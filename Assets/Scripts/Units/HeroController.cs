@@ -1,4 +1,5 @@
 using MergeDungeon.Core;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -34,6 +35,7 @@ namespace MergeDungeon.Core
         public Image healthFill; // optional health fill 0..1
         [Header("Spawning")]
         public AbilitySpawnTable spawnTable;
+        public float spawnCooldown = 0.2f;
         private CanvasGroup _cg;
         private Transform _originalParent;
         private bool _dragging;
@@ -120,22 +122,41 @@ namespace MergeDungeon.Core
             if (mgr != null) mgr.HandleClick(gameObject);
         }
 
+        private float _lastSpawnTime;
+
         private void TrySpawnAbility()
         {
             if (isDowned) return;
             if (stamina <= 0) return;
+            if (Time.time - _lastSpawnTime < spawnCooldown) return;
 
             var defToSpawn = GetSpawnDefinition();
             if (defToSpawn != null && GridManager.Instance != null && GridManager.Instance.tileFactory != null)
             {
-                var empty = GridManager.Instance.CollectEmptyCells();
-                if (empty.Count > 0)
+                var targetCell = GridManager.Instance.FindNearestEmptyCell(currentCell);
+                if (targetCell != null)
                 {
-                    var cell = empty[Random.value < 1f ? Random.Range(0, empty.Count) : 0];
-                    var t = GridManager.Instance.tileFactory.Create(defToSpawn);
-                    if (t != null)
+                    var tile = GridManager.Instance.tileFactory.Create(defToSpawn);
+                    if (tile != null)
                     {
-                        cell.SetTile(t);
+                        // Temporarily parent under drag layer and position at hero center
+                        var tileRT = tile.GetComponent<RectTransform>();
+                        var heroRT = GetComponent<RectTransform>();
+                        var layer = GridManager.Instance.dragLayer != null ? GridManager.Instance.dragLayer : transform.parent;
+                        if (tileRT != null && heroRT != null)
+                        {
+                            tileRT.SetParent(layer, worldPositionStays: true);
+                            tileRT.position = heroRT.position;
+                            tileRT.localScale = Vector3.zero;
+                            StartCoroutine(AnimateTileSpawnToCell(tile, targetCell, 0.2f));
+                            _lastSpawnTime = Time.time;
+                        }
+                        else
+                        {
+                            // Fallback: place immediately if RectTransforms missing
+                            targetCell.SetTile(tile);
+                            _lastSpawnTime = Time.time;
+                        }
                     }
                 }
             }
@@ -151,6 +172,41 @@ namespace MergeDungeon.Core
             }
             stamina -= 1;
             RefreshUI();
+        }
+
+        private IEnumerator AnimateTileSpawnToCell(TileBase tile, BoardCell targetCell, float duration)
+        {
+            if (tile == null || targetCell == null) yield break;
+
+            var tileRT = tile.GetComponent<RectTransform>();
+            var targetRT = targetCell.rectTransform;
+            if (tileRT == null || targetRT == null)
+            {
+                targetCell.SetTile(tile);
+                yield break;
+            }
+
+            Vector3 startPos = tileRT.position;
+            Vector3 endPos = targetRT.position;
+            Vector3 startScale = Vector3.zero;
+            Vector3 endScale = Vector3.one;
+            float t = 0f;
+            duration = Mathf.Max(0.0001f, duration);
+
+            while (t < 1f && tile != null)
+            {
+                t += Time.deltaTime / duration;
+                float e = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t));
+                tileRT.position = Vector3.LerpUnclamped(startPos, endPos, e);
+                tileRT.localScale = Vector3.LerpUnclamped(startScale, endScale, e);
+                yield return null;
+            }
+
+            if (tile != null)
+            {
+                // Finalize placement
+                targetCell.SetTile(tile);
+            }
         }
 
         public void OnSelectTap() {}

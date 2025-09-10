@@ -333,6 +333,7 @@ MonoBehaviour:
   staminaFill: {fileID: 4107642606484860896}
   healthFill: {fileID: 0}
   spawnTable: {fileID: 0}
+  spawnCooldown: 0.2
 --- !u!225 &5854770447323527484
 CanvasGroup:
   m_ObjectHideFlags: 0
