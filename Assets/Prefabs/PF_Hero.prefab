@@ -37,7 +37,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_SizeDelta: {x: 170, y: 170}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1632779848657686153
 CanvasRenderer:
@@ -294,7 +294,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_SizeDelta: {x: 200, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &920850149874524355
 CanvasRenderer:
@@ -322,12 +322,16 @@ MonoBehaviour:
   expToLevel: 2
   stamina: 20
   maxStamina: 20
+  maxHp: 3
+  hp: 3
+  isDowned: 0
   currentCell: {fileID: 0}
   bg: {fileID: 0}
   label: {fileID: 205348480883438252}
   portrait: {fileID: 7586887075823701308}
   heroVisual: {fileID: 135008343335110901}
   staminaFill: {fileID: 4107642606484860896}
+  healthFill: {fileID: 0}
   spawnTable: {fileID: 0}
 --- !u!225 &5854770447323527484
 CanvasGroup:

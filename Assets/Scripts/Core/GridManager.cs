@@ -101,7 +101,10 @@ namespace MergeDungeon.Core
         {
             _board = boardController != null ? boardController : GetComponent<BoardController>();
             if (_board == null) _board = gameObject.AddComponent<BoardController>();
-            BuildBoard();
+            if (Application.isPlaying)
+            {
+                BuildBoard();
+            }
             if (_board != null) _board.RecomputeGridCellSize(force: true);
         }
 

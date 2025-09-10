@@ -174,7 +174,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_SizeDelta: {x: 180, y: 180}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5652253500525192773
 CanvasRenderer:
@@ -238,9 +238,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41b42ac6f878e02469a278ec5b9c210e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.LootBagTile
-  kind: 0
+  def: {fileID: 0}
   currentCell: {fileID: 0}
   lootRemaining: 0
   iconBg: {fileID: 5668592312224577073}
   label: {fileID: 7343064382040991631}
-  lootTable: {fileID: 0}
+  selectionImage: {fileID: 0}
+  selectionColor: {r: 1, g: 0.95, b: 0.3, a: 0.9}
+  scaleOnSelect: 1
+  selectionScale: 1.06

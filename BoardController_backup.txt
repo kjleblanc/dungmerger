@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+﻿#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace MergeDungeon.Core
 {
@@ -23,6 +26,9 @@ namespace MergeDungeon.Core
         private BoardCell[,] _cells;
         public bool IsBoardReady => _cells != null;
         
+#if UNITY_EDITOR
+        private bool _rebuildQueued;
+#endif
 
         // Configure via Inspector; no implicit seeding from GridManager
 
@@ -69,19 +75,42 @@ namespace MergeDungeon.Core
 
         private void OnValidate()
         {
+#if UNITY_EDITOR
             if (!Application.isPlaying)
             {
-                // Only update layout sizing in edit mode; no rebuild
-                RecomputeGridCellSize(force: true);
+                ScheduleEditorRebuild();
             }
+#endif
         }
 
         private void OnEnable()
         {
-            // No automatic rebuilds in edit mode; only via inspector button
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                ScheduleEditorRebuild();
+            }
+#endif
         }
 
-        // Rebuilds occur only when explicitly invoked (e.g., via custom editor button)
+#if UNITY_EDITOR
+        private void ScheduleEditorRebuild()
+        {
+            if (_rebuildQueued) return;
+            if (!isActiveAndEnabled) return;
+            if (!gameObject.scene.IsValid()) return; // avoid modifying prefab assets
+
+            _rebuildQueued = true;
+            EditorApplication.delayCall += () =>
+            {
+                if (this == null) return; // object may have been destroyed
+                _rebuildQueued = false;
+                if (Application.isPlaying) return;
+                BuildBoard(cellPrefab);
+                RecomputeGridCellSize(force: true);
+            };
+        }
+#endif
 
         public void RecomputeGridCellSize(bool force = false)
         {
@@ -121,3 +150,4 @@ namespace MergeDungeon.Core
         }
     }
 }
+

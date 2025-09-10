@@ -12,8 +12,13 @@ namespace MergeDungeon.Core
             var controller = (BoardController)target;
             if (GUILayout.Button("Rebuild Board"))
             {
-                controller.BuildBoard(controller.cellPrefab);
-                controller.RecomputeGridCellSize(force: true);
+                // Delay to next editor tick to avoid rebuild during inspector GUI events
+                EditorApplication.delayCall += () =>
+                {
+                    if (controller == null) return;
+                    controller.BuildBoard(controller.cellPrefab);
+                    controller.RecomputeGridCellSize(force: true);
+                };
             }
         }
     }
