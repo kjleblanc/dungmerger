@@ -36,7 +36,12 @@ namespace MergeDungeon.Core
 		{
 			if (!ctx.performed) return;
 			var go = RaycastTopGameObject(Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero);
-			UISelectionManager.Instance?.HandleClick(go);
+			// Only clear selection on empty taps; component click handlers handle selection
+			bool hasSelectable = go != null && go.GetComponentInParent<ISelectable>() != null;
+			if (!hasSelectable)
+			{
+				UISelectionManager.Instance?.HandleClick(null);
+			}
 		}
 
 		// Wire these to Pointer/Press/Drag actions or call manually from UI event bridges
@@ -48,10 +53,6 @@ namespace MergeDungeon.Core
 				_pressStartScreen = pos;
 				_dragging = false;
 				_draggedTile = RaycastTopTile(pos);
-				if (_draggedTile != null)
-				{
-					UISelectionManager.Instance?.HandleClick(_draggedTile.gameObject);
-				}
 			}
 			else if (ctx.canceled)
 			{

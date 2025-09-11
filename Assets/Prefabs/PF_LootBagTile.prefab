@@ -243,7 +243,3 @@ MonoBehaviour:
   lootRemaining: 0
   iconBg: {fileID: 5668592312224577073}
   label: {fileID: 7343064382040991631}
-  selectionImage: {fileID: 0}
-  selectionColor: {r: 1, g: 0.95, b: 0.3, a: 0.9}
-  scaleOnSelect: 1
-  selectionScale: 1.06

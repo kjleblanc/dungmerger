@@ -4,8 +4,8 @@ namespace MergeDungeon.Core
 {
     public class UISelectionManager : MonoBehaviour
     {
+        // Highlights are applied on BoardCell overlays; tile highlights removed.
         [Header("Visual Defaults")]
-        public bool overrideTileVisuals = false;
         public bool overrideHighlightVisuals = true;
         public Color selectedColor = new Color(1f, 0.95f, 0.3f, 0.9f);
         public bool scaleOnSelect = true;
@@ -104,10 +104,12 @@ namespace MergeDungeon.Core
             _selectedCell = go != null ? go.GetComponentInParent<BoardCell>() : null;
             sel.OnSelectTap();
 
-            // Acquire or create highlight on the cell background and enable it
+            // Acquire or create highlight on the cell and enable it
             _selectedHighlight = GetCellHighlight(_selectedCell, createIfMissing: true);
             if (_selectedHighlight != null)
             {
+                // Ensure overlay renders above cell background but below occupants
+                if (_selectedHighlight.overlay != null) _selectedHighlight.overlay.transform.SetSiblingIndex(0);
                 // For cell highlight, avoid scaling to not affect layout
                 if (overrideHighlightVisuals)
                 {
@@ -125,11 +127,29 @@ namespace MergeDungeon.Core
         private SelectableHighlight GetCellHighlight(BoardCell cell, bool createIfMissing)
         {
             if (cell == null) return null;
-            var target = cell.bg != null ? cell.bg.gameObject : cell.gameObject;
+            // Attach highlight to the cell root so we can place overlay above background and occupants
+            var target = cell.gameObject;
             var hl = target.GetComponent<SelectableHighlight>();
             if (hl == null && createIfMissing)
             {
                 hl = target.AddComponent<SelectableHighlight>();
+            }
+            if (hl != null && hl.overlay == null && createIfMissing)
+            {
+                // Create an overlay Image that stretches to the cell and sits on top
+                var go = new GameObject("SelectionOverlay", typeof(RectTransform), typeof(UnityEngine.UI.Image));
+                var rt = go.GetComponent<RectTransform>();
+                rt.SetParent(target.transform, worldPositionStays: false);
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.offsetMin = Vector2.zero;
+                rt.offsetMax = Vector2.zero;
+                go.transform.SetSiblingIndex(0); // above background, below other children
+                var img = go.GetComponent<UnityEngine.UI.Image>();
+                img.raycastTarget = false;
+                img.color = selectedColor;
+                img.enabled = false; // start hidden
+                hl.overlay = img;
             }
             return hl;
         }
@@ -137,16 +157,11 @@ namespace MergeDungeon.Core
         private void ApplySelectedVisual(GameObject go, bool selected)
         {
             if (go == null) return;
-            // Prefer highlighting the BoardCell (tile slot) so selection surrounds the cell, not the occupant
+            // Highlight the BoardCell (tile slot) so selection surrounds the cell, not the occupant
             var cell = go.GetComponentInParent<BoardCell>();
             if (cell != null)
             {
-                GameObject cellTarget = cell.bg != null ? cell.bg.gameObject : cell.gameObject;
-                var cellHl = cellTarget.GetComponent<SelectableHighlight>();
-                if (cellHl == null && selected)
-                {
-                    cellHl = cellTarget.AddComponent<SelectableHighlight>();
-                }
+                var cellHl = GetCellHighlight(cell, createIfMissing: selected);
                 if (cellHl != null)
                 {
                     // For cell highlight, avoid scaling to not affect layout
@@ -154,32 +169,20 @@ namespace MergeDungeon.Core
                     var scaleVal = 1f;
                     var color = selectedColor;
                     var dist = outlineEffectDistance;
-                if (overrideHighlightVisuals)
-                {
-                    cellHl.ApplyStyle(color, scaleFlag, scaleVal, dist);
+                    if (cellHl.overlay != null) cellHl.overlay.transform.SetSiblingIndex(0);
+                    if (overrideHighlightVisuals)
+                    {
+                        cellHl.ApplyStyle(color, scaleFlag, scaleVal, dist);
+                    }
+                    if (overrideHighlightFade)
+                    {
+                        cellHl.ApplyFadeStyle(highlightFadeEnabled, highlightFadeIn, highlightFadeOut, highlightFadeCurve);
+                    }
+                    cellHl.SetSelected(selected);
+                    return;
                 }
-                if (overrideHighlightFade)
-                {
-                    cellHl.ApplyFadeStyle(highlightFadeEnabled, highlightFadeIn, highlightFadeOut, highlightFadeCurve);
-                }
-                cellHl.SetSelected(selected);
-                return;
-            }
             }
 
-            // Fallbacks: tile visuals or generic highlight on clicked object
-            var tile = go.GetComponentInParent<TileBase>();
-            if (tile != null)
-            {
-                if (overrideTileVisuals)
-                {
-                    tile.selectionColor = selectedColor;
-                    tile.scaleOnSelect = scaleOnSelect;
-                    tile.selectionScale = selectionScale;
-                }
-                tile.SetSelected(selected);
-                return;
-            }
             // Else use a SelectableHighlight (no add during deselect to avoid destroy race)
             var hl = go.GetComponentInParent<SelectableHighlight>();
             if (hl != null)
@@ -209,5 +212,7 @@ namespace MergeDungeon.Core
                 hl.SetSelected(true);
             }
         }
+
+        
     }
 }

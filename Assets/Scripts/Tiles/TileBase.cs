@@ -21,41 +21,13 @@ namespace MergeDungeon.Core
         public Image iconBg;
         public TMP_Text label;
 
-        [Header("Selection")]
-        public Image selectionImage; // Optional overlay image to show selection
-        public Color selectionColor = new Color(1f, 0.95f, 0.3f, 0.9f);
-        public bool scaleOnSelect = true;
-        public float selectionScale = 1.06f;
-
         private CanvasGroup _cg;
         private Transform _originalParent;
         private bool _dragging;
-        private Outline _outline;
-        private Image _outlineTarget;
 
         private void Awake()
         {
             _cg = GetComponent<CanvasGroup>();
-            if (selectionImage != null)
-            {
-                selectionImage.enabled = false;
-                selectionImage.color = selectionColor;
-            }
-            // Fallback: add outline to the best available Image if no explicit selection image
-            _outlineTarget = iconBg != null ? iconBg : GetComponent<Image>();
-            if (_outlineTarget == null)
-            {
-                // Try find any child Image (last resort)
-                _outlineTarget = GetComponentInChildren<Image>();
-            }
-            if (selectionImage == null && _outlineTarget != null)
-            {
-                _outline = _outlineTarget.GetComponent<Outline>();
-                if (_outline == null) _outline = _outlineTarget.gameObject.AddComponent<Outline>();
-                _outline.enabled = false;
-                _outline.effectColor = selectionColor;
-                _outline.effectDistance = new Vector2(2f, -2f);
-            }
         }
 
         private void Start()
@@ -213,25 +185,6 @@ namespace MergeDungeon.Core
 
         public virtual void OnSelectTap() { }
         public virtual void OnActivateTap() { }
-
-        public void SetSelected(bool selected)
-        {
-            if (selectionImage != null)
-            {
-                selectionImage.enabled = selected;
-                selectionImage.color = selectionColor;
-            }
-            if (_outline != null)
-            {
-                _outline.enabled = selected;
-                _outline.effectColor = selectionColor;
-            }
-            if (scaleOnSelect)
-            {
-                float s = selected ? selectionScale : 1f;
-                transform.localScale = new Vector3(s, s, 1f);
-            }
-        }
 
         public void SetDefinition(TileDefinition d)
         {

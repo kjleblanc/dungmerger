@@ -185,20 +185,20 @@ namespace MergeDungeon.Core
 
         public void SetSelectedTile(TileBase tile)
         {
-            if (SelectedTile != null)
-            {
-                SelectedTile.SetSelected(false);
-            }
+            // Centralize selection visuals in UISelectionManager
             SelectedTile = tile;
-            if (SelectedTile != null)
+            var selMgr = UISelectionManager.Instance;
+            if (selMgr != null)
             {
-                SelectedTile.SetSelected(true);
+                if (tile == null) selMgr.ClearSelection();
+                else selMgr.HandleClick(tile.gameObject);
             }
         }
 
         public void ClearSelection()
         {
-            SetSelectedTile(null);
+            SelectedTile = null;
+            UISelectionManager.Instance?.ClearSelection();
         }
 
         // Wrapper spawns delegating to EnemySpawner
