@@ -34,10 +34,11 @@ namespace MergeDungeon.Core
 		[Header("Behaviors")]
 		public bool draggable = true;
 
-		[Header("Ability")]
-		public bool canAttack;
-		public int damage = 1;
-		public AbilityArea area = AbilityArea.SingleTarget;
+                [Header("Ability")]
+                public bool canAttack;
+                public int damage = 1;
+                public AbilityArea area = AbilityArea.SingleTarget;
+                public GameObject abilityVfxPrefab;
 
 
 		public enum FeedTarget

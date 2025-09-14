@@ -374,6 +374,11 @@ namespace MergeDungeon.Core
             if (area == AbilityArea.SingleTarget)
             {
                 enemy.ApplyHit(damage);
+                if (_fx != null && tile != null && tile.def != null && tile.def.abilityVfxPrefab != null)
+                {
+                    var rt = enemy.GetComponent<RectTransform>();
+                    _fx.SpawnAbilityFx(rt, tile.def.abilityVfxPrefab);
+                }
                 return true;
             }
             else // CrossPlus area

@@ -116,10 +116,10 @@ TextureImporter:
       name: Ability_Slice_0
       rect:
         serializedVersion: 2
-        x: 100
-        y: 108
-        width: 883
-        height: 865
+        x: 24
+        y: 18
+        width: 185
+        height: 225
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

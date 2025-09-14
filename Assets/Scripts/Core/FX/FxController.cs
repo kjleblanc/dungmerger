@@ -87,6 +87,32 @@ namespace MergeDungeon.Core
                 rt.SetAsLastSibling();
             }
         }
+
+        public void SpawnAbilityFx(RectTransform target, GameObject prefab)
+        {
+            Transform layer = fxLayer != null ? fxLayer : (dragLayerController != null ? dragLayerController.dragLayer : null);
+            if (layer == null || prefab == null) return;
+            RectTransform layerRT = layer as RectTransform;
+            Canvas parentCanvas = layerRT != null ? layerRT.GetComponent<Canvas>() : null;
+            if (parentCanvas == null && layerRT != null) parentCanvas = layerRT.GetComponentInParent<Canvas>();
+            Vector2 anchored = Vector2.zero;
+            if (layerRT != null && target != null)
+            {
+                var cam = parentCanvas != null ? parentCanvas.worldCamera : null;
+                Vector2 screen = RectTransformUtility.WorldToScreenPoint(cam, target.position);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(layerRT, screen, cam, out anchored);
+            }
+
+            var fx = Object.Instantiate(prefab, layer);
+            var rt = fx.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                if (layerRT != null) rt.anchoredPosition = anchored;
+                else if (target != null) rt.position = target.position;
+                else rt.anchoredPosition = Vector2.zero;
+            }
+            fx.transform.SetAsLastSibling();
+        }
     }
 }
 

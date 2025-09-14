@@ -116,10 +116,10 @@ TextureImporter:
       name: Background_Tile_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 376
-        height: 380
+        x: 23
+        y: 19
+        width: 214
+        height: 213
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
