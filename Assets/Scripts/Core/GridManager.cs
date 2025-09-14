@@ -71,7 +71,7 @@ namespace MergeDungeon.Core
         [Header("Combat Data")]
         // AbilityConfig deprecated; ability stats now live on TileDefinition
         public EnemyDatabase enemyDatabase;
-        public FxController fxController; // optional, auto-add
+        public VfxManager vfxManager; // optional, auto-add
         [Header("Visuals")]
         public EnemyVisualLibrary enemyVisualLibrary;
         public HeroVisualLibrary heroVisualLibrary;
@@ -81,7 +81,7 @@ namespace MergeDungeon.Core
         // Extracted modules (auto-initialized)
         private AdvanceMeterController _advanceMeter;
         private EnemyMover _enemyMover;
-        private FxController _fx;
+        private VfxManager _vfx;
         private DragLayerController _drag;
         [Header("Drag Layer Sorting")]
         [HideInInspector] public bool forceDragAbove = true; // moved to DragLayerController
@@ -116,10 +116,10 @@ namespace MergeDungeon.Core
                 _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
                 if (_drag == null) _drag = gameObject.AddComponent<DragLayerController>();
                 _drag.Setup();
-                _fx = fxController != null ? fxController : GetComponent<FxController>();
-                if (_fx == null) _fx = gameObject.AddComponent<FxController>();
-                if (_fx.dragLayerController == null) _fx.dragLayerController = _drag;
-                _fx.Setup();
+                _vfx = vfxManager != null ? vfxManager : GetComponent<VfxManager>();
+                if (_vfx == null) _vfx = gameObject.AddComponent<VfxManager>();
+                if (_vfx.dragLayerController == null) _vfx.dragLayerController = _drag;
+                _vfx.Setup();
                 // Initialize board controller (board built in OnEnable)
                 _board = boardController != null ? boardController : GetComponent<BoardController>();
                 if (_board == null) _board = gameObject.AddComponent<BoardController>();
@@ -374,10 +374,10 @@ namespace MergeDungeon.Core
             if (area == AbilityArea.SingleTarget)
             {
                 enemy.ApplyHit(damage);
-                if (_fx != null && tile != null && tile.def != null && tile.def.abilityVfxPrefab != null)
+                if (_vfx != null && tile != null && tile.def != null && tile.def.abilityVfxPrefab != null)
                 {
                     var rt = enemy.GetComponent<RectTransform>();
-                    _fx.SpawnAbilityFx(rt, tile.def.abilityVfxPrefab);
+                    _vfx.SpawnAbilityFx(rt, tile.def.abilityVfxPrefab);
                 }
                 return true;
             }
@@ -408,12 +408,23 @@ namespace MergeDungeon.Core
 
         public void SpawnDamagePopup(RectTransform target, int amount, Color color)
         {
-            if (_fx != null) _fx.SpawnDamagePopup(target, amount, color);
+            if (_vfx != null)
+            {
+                var go = _vfx.PlayUI(_vfx.damagePopupEffectId, target);
+                if (go != null)
+                {
+                    var popup = go.GetComponent<DamagePopup>();
+                    if (popup != null)
+                    {
+                        popup.Set(amount, color);
+                    }
+                }
+            }
         }
 
         // Expose drag layer and damage color for existing code
         public Transform dragLayer => _drag != null ? _drag.dragLayer : null;
-        public Color damageNumberColor => _fx != null ? _fx.damageNumberColor : new Color(1f, 0.3f, 0.3f, 1f);
+        public Color damageNumberColor => _vfx != null ? _vfx.damageNumberColor : new Color(1f, 0.3f, 0.3f, 1f);
 
         
 

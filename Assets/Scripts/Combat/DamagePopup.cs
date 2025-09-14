@@ -52,8 +52,17 @@ namespace MergeDungeon.Core
             }
             if (u >= 1f)
             {
-                var pool = GetComponentInParent<MergeDungeon.Core.DamagePopupPool>();
-                if (pool != null) pool.Release(this); else Destroy(gameObject);
+                // Return to VfxManager pool if available; otherwise destroy
+                var key = GetComponent<MergeDungeon.Core.VfxPoolKey>();
+                if (key != null && key.manager != null)
+                {
+                    key.manager.Release(gameObject);
+                }
+                else
+                {
+                    var vfxMgr = GetComponentInParent<MergeDungeon.Core.VfxManager>();
+                    if (vfxMgr != null) vfxMgr.Release(gameObject); else Destroy(gameObject);
+                }
             }
         }
     }

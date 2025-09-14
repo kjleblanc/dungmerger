@@ -243,7 +243,29 @@ namespace MergeDungeon.Core
 
         public void OnDrag(PointerEventData eventData)
         {
-            transform.position = eventData.position;
+            // Convert screen to local anchored position within the drag layer to support Screen Space - Camera canvases
+            var layer = GridManager.Instance != null ? GridManager.Instance.dragLayer : null;
+            var layerRT = layer as RectTransform;
+            if (layerRT != null)
+            {
+                Canvas canvas = layerRT.GetComponentInParent<Canvas>();
+                if (canvas == null) canvas = layerRT.GetComponentInParent<Canvas>();
+                var cam = canvas != null ? canvas.worldCamera : null;
+                Vector2 local;
+                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(layerRT, eventData.position, cam, out local))
+                {
+                    var rt = transform as RectTransform;
+                    if (rt != null) rt.anchoredPosition = local; else transform.position = eventData.position;
+                }
+                else
+                {
+                    transform.position = eventData.position;
+                }
+            }
+            else
+            {
+                transform.position = eventData.position;
+            }
         }
 
         public void OnEndDrag(PointerEventData eventData)

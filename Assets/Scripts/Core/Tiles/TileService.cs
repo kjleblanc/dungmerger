@@ -395,8 +395,8 @@ namespace MergeDungeon.Core
             var gm = GridManager.Instance;
             if (gm != null)
             {
-                var fx = gm.fxController;
-                if (fx != null && fx.fxLayer != null) return fx.fxLayer;
+                var vfx = gm.vfxManager;
+                if (vfx != null && vfx.fxLayer != null) return vfx.fxLayer;
                 if (gm.dragLayer != null) return gm.dragLayer;
             }
             return null;

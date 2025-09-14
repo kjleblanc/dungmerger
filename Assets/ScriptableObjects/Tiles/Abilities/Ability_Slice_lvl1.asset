@@ -24,7 +24,7 @@ MonoBehaviour:
   canAttack: 1
   damage: 1
   area: 0
-  abilityVfxPrefab: {fileID: 100000, guid: 4ef18117dd4d4b028f5c1b17251f56c6, type: 3}
+  abilityVfxPrefab: {fileID: 8227109043669110193, guid: 9a8eca1c721c1ec47a7e599deecbb55b, type: 3}
   canFeedHero: 0
   feedTarget: 0
   feedValue: 1
