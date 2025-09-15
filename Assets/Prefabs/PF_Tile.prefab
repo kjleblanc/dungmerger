@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 5668592312224577073}
   - component: {fileID: 7073767222163567297}
   - component: {fileID: 9041613371303601300}
+  - component: {fileID: 795424026369556417}
   m_Layer: 5
   m_Name: PF_Tile
   m_TagString: Untagged
@@ -243,3 +244,18 @@ MonoBehaviour:
   lootRemaining: 0
   iconBg: {fileID: 5668592312224577073}
   label: {fileID: 7343064382040991631}
+--- !u!114 &795424026369556417
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8941558469119339420}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
+  m_EffectColor: {r: 1, g: 1, b: 1, a: 1}
+  m_EffectDistance: {x: 2, y: 2}
+  m_UseGraphicAlpha: 1
