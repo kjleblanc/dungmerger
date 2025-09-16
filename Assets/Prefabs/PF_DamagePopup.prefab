@@ -49,7 +49,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 349067bcc3a514048838e69049305d5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.DamagePopup
-  label: {fileID: 0}
+  label: {fileID: 4740313348882669625}
   lifetime: 2.69
   drift: {x: 0, y: 40}
   alphaOverLife:

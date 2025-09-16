@@ -9,7 +9,7 @@ namespace MergeDungeon.Core
 {
     [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(CanvasGroup))]
-    public class HeroController : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, ISelectable
+    public class HeroController : ServicesConsumerBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, ISelectable
     {
         public HeroKind kind = HeroKind.Warrior;
         public int level = 1;
@@ -54,9 +54,9 @@ namespace MergeDungeon.Core
             if (heroVisual != null)
             {
                 // If no override assigned yet, try to pull from GridManager's library
-                if (heroVisual.overrideController == null && GridManager.Instance != null && GridManager.Instance.heroVisualLibrary != null)
+                if (heroVisual.overrideController == null && services != null && services.HeroVisualLibrary != null)
                 {
-                    var def = GridManager.Instance.heroVisualLibrary.Get(kind);
+                    var def = services.HeroVisualLibrary.Get(kind);
                     if (def != null && def.overrideController != null)
                     {
                         heroVisual.overrideController = def.overrideController;
@@ -131,18 +131,19 @@ namespace MergeDungeon.Core
             if (Time.time - _lastSpawnTime < spawnCooldown) return;
 
             var defToSpawn = GetSpawnDefinition();
-            if (defToSpawn != null && GridManager.Instance != null && GridManager.Instance.tileFactory != null)
+            if (defToSpawn != null && services != null && services.TileFactory != null)
             {
-                var targetCell = GridManager.Instance.FindNearestEmptyCell(currentCell);
+                var board = services.Board;
+                var targetCell = board != null ? board.FindNearestEmptyCell(currentCell) : null;
                 if (targetCell != null)
                 {
-                    var tile = GridManager.Instance.tileFactory.Create(defToSpawn);
+                    var tile = services.TileFactory.Create(defToSpawn);
                     if (tile != null)
                     {
                         // Temporarily parent under drag layer and position at hero center
                         var tileRT = tile.GetComponent<RectTransform>();
                         var heroRT = GetComponent<RectTransform>();
-                        var layer = GridManager.Instance.dragLayer != null ? GridManager.Instance.dragLayer : transform.parent;
+                        var layer = services.DragLayer != null ? services.DragLayer.dragLayer : transform.parent;
                         if (tileRT != null && heroRT != null)
                         {
                             tileRT.SetParent(layer, worldPositionStays: true);
@@ -166,9 +167,9 @@ namespace MergeDungeon.Core
                 heroVisual.PlayUse();
             }
             // Increment enemy advance meter
-            if (GridManager.Instance != null)
+            if (services != null && services.Grid != null)
             {
-                GridManager.Instance.RegisterHeroUse();
+                services.Grid.RegisterHeroUse();
             }
             stamina -= 1;
             RefreshUI();
@@ -220,7 +221,7 @@ namespace MergeDungeon.Core
         {
             if (spawnTable != null)
             {
-                return spawnTable.RollForLevel(GridManager.Instance != null ? GridManager.Instance.tileDatabase : null, level);
+                return spawnTable.RollForLevel(services != null ? services.TileDatabase : null, level);
             }
             // Fallback if no table assigned
             return null;
@@ -233,9 +234,10 @@ namespace MergeDungeon.Core
             var selMgr = UISelectionManager.Instance;
             if (selMgr != null) selMgr.ClearSelection();
             _originalParent = transform.parent;
-            if (GridManager.Instance != null && GridManager.Instance.dragLayer != null)
+            var dragLayer = services != null && services.DragLayer != null ? services.DragLayer.dragLayer : null;
+            if (dragLayer != null)
             {
-                transform.SetParent(GridManager.Instance.dragLayer, true);
+                transform.SetParent(dragLayer, true);
                 transform.SetAsLastSibling();
             }
             if (_cg != null) _cg.blocksRaycasts = false;
@@ -244,7 +246,7 @@ namespace MergeDungeon.Core
         public void OnDrag(PointerEventData eventData)
         {
             // Convert screen to local anchored position within the drag layer to support Screen Space - Camera canvases
-            var layer = GridManager.Instance != null ? GridManager.Instance.dragLayer : null;
+            var layer = services != null && services.DragLayer != null ? services.DragLayer.dragLayer : null;
             var layerRT = layer as RectTransform;
             if (layerRT != null)
             {
@@ -274,7 +276,7 @@ namespace MergeDungeon.Core
 
             var go = eventData.pointerCurrentRaycast.gameObject;
             var cell = go != null ? go.GetComponentInParent<BoardCell>() : null;
-            if (cell != null && GridManager.Instance.TryPlaceHeroInCell(this, cell))
+            if (cell != null && services != null && services.Grid != null && services.Grid.TryPlaceHeroInCell(this, cell))
             {
                 var selMgr = UISelectionManager.Instance;
                 if (selMgr != null) selMgr.HandleClick(gameObject);

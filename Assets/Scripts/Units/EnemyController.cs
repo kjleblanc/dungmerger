@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace MergeDungeon.Core
 {
     [RequireComponent(typeof(RectTransform))]
-    public class EnemyController : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHandler, ISelectable
+    public class EnemyController : ServicesConsumerBehaviour, UnityEngine.EventSystems.IPointerClickHandler, ISelectable
     {
         public EnemyKind kind = EnemyKind.Slime;
         public int maxHp = 1;
@@ -28,9 +28,9 @@ namespace MergeDungeon.Core
             RefreshVisual();
             if (enemyVisual == null) enemyVisual = GetComponentInChildren<EnemyVisual>();
             
-            if (enemyVisual != null && GridManager.Instance != null && GridManager.Instance.enemyVisualLibrary != null)
+            if (enemyVisual != null && services != null && services.EnemyVisualLibrary != null)
             {
-                var def = GridManager.Instance.enemyVisualLibrary.Get(kind);
+                var def = services.EnemyVisualLibrary.Get(kind);
                 if (def != null)
                 {
                     if (def.overrideController != null)
@@ -77,10 +77,10 @@ namespace MergeDungeon.Core
         public void ApplyHit(int damage)
         {
             // Show damage number
-            var gm = GridManager.Instance;
-            if (gm != null)
+            var grid = services != null ? services.Grid : null;
+            if (grid != null)
             {
-                gm.SpawnDamagePopup(this.GetComponent<RectTransform>(), damage, gm.damageNumberColor);
+                grid.SpawnDamagePopup(this.GetComponent<RectTransform>(), damage, grid.damageNumberColor);
             }
             if (enemyVisual != null) enemyVisual.PlayHit();
             hp -= Mathf.Max(0, damage);
@@ -121,7 +121,10 @@ namespace MergeDungeon.Core
             {
                 currentCell.ClearEnemyIf(this);
             }
-            GridManager.Instance.OnEnemyDied(this);
+            if (services != null && services.Enemies != null)
+            {
+                services.Enemies.OnEnemyDied(this);
+            }
             Destroy(gameObject);
         }
 

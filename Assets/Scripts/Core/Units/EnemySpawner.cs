@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace MergeDungeon.Core
 {
-    public class EnemySpawner : MonoBehaviour
+    public class EnemySpawner : ServicesConsumerBehaviour
     {
         public GridManager grid;
         public EnemyController enemyPrefab;
@@ -19,10 +19,7 @@ namespace MergeDungeon.Core
         private readonly List<EnemyController> _enemies = new();
         public int ActiveEnemyCount => _enemies.Count;
 
-        private void Awake()
-        {
-            if (grid == null) grid = GridManager.Instance;
-        }
+        private void Awake() {}
 
         public void InitializeFrom(GridManager g)
         {
@@ -37,12 +34,15 @@ namespace MergeDungeon.Core
 
         public void TrySpawnEnemyTopRows()
         {
+            var gm = services != null ? services.Grid : grid;
+            var board = services != null ? services.Board : (gm != null ? gm.boardController : null);
+            if (board == null) return;
             var candidateCells = new List<BoardCell>();
-            for (int y = grid.Height - 1; y >= Mathf.Max(grid.Height - 2, 0); y--)
+            for (int y = board.height - 1; y >= Mathf.Max(board.height - 2, 0); y--)
             {
-                for (int x = 0; x < grid.Width; x++)
+                for (int x = 0; x < board.width; x++)
                 {
-                    var c = grid.GetCell(x, y);
+                    var c = board.GetCell(x, y);
                     if (c.enemy == null && c.tile == null && c.hero == null)
                         candidateCells.Add(c);
                 }
@@ -50,9 +50,10 @@ namespace MergeDungeon.Core
             if (candidateCells.Count == 0) return;
             var kind = (Random.value < 0.6f) ? EnemyKind.Slime : EnemyKind.Bat;
             int baseHp = kind == EnemyKind.Slime ? 1 : 2;
-            if (grid.enemyDatabase != null)
+            var enemyDb = services != null ? services.EnemyDatabase : (gm != null ? gm.enemyDatabase : null);
+            if (enemyDb != null)
             {
-                var def = grid.enemyDatabase.Get(kind);
+                var def = enemyDb.Get(kind);
                 if (def != null) baseHp = Mathf.Max(1, def.baseHP);
             }
             TrySpawnEnemyTopRowsOfKind(kind, baseHp, isBoss: false);
@@ -60,12 +61,15 @@ namespace MergeDungeon.Core
 
         public EnemyController TrySpawnEnemyTopRowsOfKind(EnemyKind kind, int baseHp, bool isBoss = false)
         {
+            var gm = services != null ? services.Grid : grid;
+            var board = services != null ? services.Board : (gm != null ? gm.boardController : null);
+            if (board == null) return null;
             var candidateCells = new List<BoardCell>();
-            for (int y = grid.Height - 1; y >= Mathf.Max(grid.Height - 2, 0); y--)
+            for (int y = board.height - 1; y >= Mathf.Max(board.height - 2, 0); y--)
             {
-                for (int x = 0; x < grid.Width; x++)
+                for (int x = 0; x < board.width; x++)
                 {
-                    var c = grid.GetCell(x, y);
+                    var c = board.GetCell(x, y);
                     if (c.enemy == null && c.tile == null && c.hero == null)
                         candidateCells.Add(c);
                 }
@@ -98,22 +102,24 @@ namespace MergeDungeon.Core
                 }
             }
             _enemies.Add(e);
-            grid.RaiseEnemySpawned(e);
+            gm?.RaiseEnemySpawned(e);
             return e;
         }
 
         public void OnEnemyDied(EnemyController enemy)
         {
             _enemies.Remove(enemy);
-            grid.RaiseEnemyDied(enemy);
+            var gm = services != null ? services.Grid : grid;
+            gm?.RaiseEnemyDied(enemy);
             var cell = enemy.currentCell;
             if (cell != null)
             {
                 var bagDef = enemy.kind == EnemyKind.Slime ? slimeLootBagDef : batLootBagDef;
                 LootTable table = enemy.kind == EnemyKind.Slime ? slimeLootTable : batLootTable;
-                if (bagDef != null && grid != null && grid.tileFactory != null)
+                var factory = services != null ? services.TileFactory : (gm != null ? gm.tileFactory : null);
+                if (bagDef != null && factory != null)
                 {
-                    var bagTile = grid.tileFactory.Create(bagDef);
+                    var bagTile = factory.Create(bagDef);
                     if (bagTile != null)
                     {
                         var lb = bagTile as LootBagTile;

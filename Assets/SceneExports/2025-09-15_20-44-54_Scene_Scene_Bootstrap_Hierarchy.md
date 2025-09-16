@@ -1,0 +1,200 @@
+# Scene: Scene_Bootstrap
+
+- Unity: 6000.2.0b2
+- Exported: 2025-09-15 20:44:54
+
+- Main Camera (active: true)
+  - Scripts:
+    - UnityEngine.Rendering.Universal.UniversalAdditionalCameraData — Packages/com.unity.render-pipelines.universal/Runtime/UniversalAdditionalCameraData.cs
+- VFX Overlay (active: true)
+  - Scripts:
+    - UnityEngine.Rendering.Universal.UniversalAdditionalCameraData — Packages/com.unity.render-pipelines.universal/Runtime/UniversalAdditionalCameraData.cs
+- Global Light 2D (active: true)
+  - Scripts:
+    - UnityEngine.Rendering.Universal.Light2D — Packages/com.unity.render-pipelines.universal/Runtime/2D/Light2D.cs
+- VFXWorld (active: true)
+- Canvas (active: true)
+  - Scripts:
+    - UnityEngine.UI.CanvasScaler — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Layout/CanvasScaler.cs
+    - UnityEngine.UI.GraphicRaycaster — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/GraphicRaycaster.cs
+  - DragLayer (active: true)
+    - Scripts:
+      - MergeDungeon.Core.DragLayerController — Assets/Scripts/Core/UI/DragLayerController.cs
+  - Board (active: true)
+    - Scripts:
+      - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+      - UnityEngine.UI.GridLayoutGroup — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Layout/GridLayoutGroup.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+    - PF_BoardCell(Clone) (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+        - MergeDungeon.Core.BoardCell — Assets/Scripts/Core/BoardCell.cs
+  - Map (active: true)
+    - Scripts:
+      - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+    - Next (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+      - NextRoom (active: true)
+        - Scripts:
+          - TMPro.TextMeshProUGUI — Packages/com.unity.ugui/Runtime/TMP/TextMeshProUGUI.cs
+    - Current (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+      - CurrentRoom (active: true)
+        - Scripts:
+          - TMPro.TextMeshProUGUI — Packages/com.unity.ugui/Runtime/TMP/TextMeshProUGUI.cs
+  - Meter (active: true)
+    - AdvanceMeter (active: true)
+      - Scripts:
+        - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+      - Fill (active: true)
+        - Scripts:
+          - UnityEngine.UI.Image — Packages/com.unity.ugui/Runtime/UGUI/UI/Core/Image.cs
+- Systems (active: true)
+  - Scripts:
+    - MergeDungeon.Core.SaveServiceHost — Assets/Scripts/Save/SaveServiceHost.cs
+  - BoardSystem (active: true)
+    - GridManager (active: true)
+      - Scripts:
+        - MergeDungeon.Core.GridManager — Assets/Scripts/Core/GridManager.cs
+        - MergeDungeon.Core.TileFactory — Assets/Scripts/Core/Tiles/TileFactory.cs
+    - BoardController (active: true)
+      - Scripts:
+        - MergeDungeon.Core.BoardController — Assets/Scripts/Core/Board/BoardController.cs
+    - TileService (active: true)
+      - Scripts:
+        - MergeDungeon.Core.TileService — Assets/Scripts/Core/Tiles/TileService.cs
+  - DungeonSystem (active: true)
+    - DungeonManager (active: true)
+      - Scripts:
+        - MergeDungeon.Core.DungeonManager — Assets/Scripts/Progression/DungeonManager.cs
+    - EnemySpawner (active: true)
+      - Scripts:
+        - MergeDungeon.Core.EnemySpawner — Assets/Scripts/Core/Units/EnemySpawner.cs
+  - EnemySystem (active: true)
+    - EnemyCoordinator (active: true)
+      - Scripts:
+        - MergeDungeon.Core.EnemyCoordinator — Assets/Scripts/Enemies/EnemyCoordinator.cs
+  - ProgressionSystem (active: true)
+    - AdvanceMeterController (active: true)
+      - Scripts:
+        - MergeDungeon.Core.AdvanceMeterController — Assets/Scripts/Core/Turn/AdvanceMeterController.cs
+  - UISystem (active: true)
+    - EventSystem (active: true)
+      - Scripts:
+        - UnityEngine.EventSystems.EventSystem — Packages/com.unity.ugui/Runtime/UGUI/EventSystem/EventSystem.cs
+        - UnityEngine.InputSystem.UI.InputSystemUIInputModule — Packages/com.unity.inputsystem/InputSystem/Plugins/UI/InputSystemUIInputModule.cs
+    - UISelectionManager (active: true)
+      - Scripts:
+        - MergeDungeon.Core.UISelectionManager — Assets/Scripts/UI/UISelectionManager.cs
+    - RoomMapUI (active: true)
+      - Scripts:
+        - MergeDungeon.Core.RoomMapUI — Assets/Scripts/UI/RoomMapUI.cs
+    - VFX (active: true)
+      - Scripts:
+        - MergeDungeon.Core.VfxManager — Assets/Scripts/Core/FX/VfxManager.cs
+  - InputSystem (active: true)
+    - Scripts:
+      - UnityEngine.InputSystem.PlayerInput — Packages/com.unity.inputsystem/InputSystem/Plugins/PlayerInput/PlayerInput.cs
+      - MergeDungeon.Core.GameplayInput — Assets/Scripts/Input/GameplayInput.cs
+
+---
+Total GameObjects: 58
+Total Scripts: 81
+Missing Scripts: 0

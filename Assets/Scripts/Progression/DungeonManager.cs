@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace MergeDungeon.Core
 {
-    public class DungeonManager : MonoBehaviour
+    public class DungeonManager : ServicesConsumerBehaviour
     {
         [Header("Config")]
         public int roomsPerFloor = 5;
@@ -35,7 +35,7 @@ namespace MergeDungeon.Core
 
         private void Start()
         {
-            if (grid == null) grid = GridManager.Instance;
+            if (grid == null) grid = services != null ? services.Grid : FindFirstObjectByType<GridManager>();
             if (grid == null)
             {
                 Debug.LogError("DungeonManager: GridManager not found in scene");

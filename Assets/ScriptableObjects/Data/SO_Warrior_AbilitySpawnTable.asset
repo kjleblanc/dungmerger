@@ -10,8 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 18737f4ffc64b724c9b899a15f1fb37c, type: 3}
-  m_Name: Warrior_AbilitySpawnTable
+  m_Name: SO_Warrior_AbilitySpawnTable
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.AbilitySpawnTable
+  fallbackDatabase: {fileID: 11400000, guid: 50297c63071016f489c03ff7f66b9286, type: 2}
   tiers:
   - minLevel: 1
     entries:

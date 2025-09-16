@@ -61,14 +61,15 @@ namespace MergeDungeon.Core
             bool spawned = false;
             if (def != null && def.lootTable != null)
             {
-                var dropDef = def.lootTable.RollItemDefinition(GridManager.Instance != null ? GridManager.Instance.tileDatabase : null);
-                if (dropDef != null && GridManager.Instance != null && GridManager.Instance.tileService != null)
+                var db = services != null ? services.TileDatabase : null;
+                var dropDef = def.lootTable.RollItemDefinition(db);
+                if (dropDef != null && services != null && services.Tiles != null)
                 {
-                    var empty = GridManager.Instance.CollectEmptyCells();
+                    var empty = services.Board != null ? services.Board.CollectEmptyCells() : new System.Collections.Generic.List<BoardCell>();
                     if (empty.Count > 0)
                     {
                         var cell = empty[Random.Range(0, empty.Count)];
-                        var t = GridManager.Instance.tileFactory != null ? GridManager.Instance.tileFactory.Create(dropDef) : null;
+                        var t = services.TileFactory != null ? services.TileFactory.Create(dropDef) : null;
                         if (t != null)
                         {
                             cell.SetTile(t);
@@ -77,7 +78,7 @@ namespace MergeDungeon.Core
                     }
                 }
             }
-            else if (GridManager.Instance != null)
+            else if (services != null)
             {
                 // legacy fallback path unavailable without lootTable; do nothing
             }

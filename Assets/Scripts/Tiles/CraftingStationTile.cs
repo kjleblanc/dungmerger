@@ -80,7 +80,7 @@ namespace MergeDungeon.Core
             foreach (var ing in recipe.ingredients)
             {
                 if (ing == null) return false;
-                var def = ing.tile != null ? ing.tile.Resolve(GridManager.Instance != null ? GridManager.Instance.tileDatabase : null) : null;
+                var def = ing.tile != null ? ing.tile.Resolve(services != null ? services.TileDatabase : null) : null;
                 if (def == null) return false;
                 _inventory.TryGetValue(def, out int have);
                 if (have < Mathf.Max(1, ing.count)) return false;
@@ -93,7 +93,7 @@ namespace MergeDungeon.Core
             foreach (var ing in recipe.ingredients)
             {
                 int need = Mathf.Max(1, ing.count);
-                var def = ing.tile != null ? ing.tile.Resolve(GridManager.Instance != null ? GridManager.Instance.tileDatabase : null) : null;
+                var def = ing.tile != null ? ing.tile.Resolve(services != null ? services.TileDatabase : null) : null;
                 if (def == null) continue;
                 _inventory.TryGetValue(def, out int have);
                 _inventory[def] = Mathf.Max(0, have - need);
@@ -103,15 +103,15 @@ namespace MergeDungeon.Core
         private void ProduceOutput(CraftingRecipe recipe)
         {
             int count = Mathf.Max(1, recipe.outputCount);
-            var outputDef = recipe.output != null ? recipe.output.Resolve(GridManager.Instance != null ? GridManager.Instance.tileDatabase : null) : null;
+            var outputDef = recipe.output != null ? recipe.output.Resolve(services != null ? services.TileDatabase : null) : null;
             if (outputDef == null) return;
             for (int i = 0; i < count; i++)
             {
                 // Spawn into a random empty cell for simplicity
-                var empty = GridManager.Instance.CollectEmptyCells();
+                var empty = services != null && services.Board != null ? services.Board.CollectEmptyCells() : new List<BoardCell>();
                 if (empty.Count == 0) return;
                 var cell = empty[Random.Range(0, empty.Count)];
-                var t = GridManager.Instance.tileFactory != null ? GridManager.Instance.tileFactory.Create(outputDef) : null;
+                var t = services != null && services.TileFactory != null ? services.TileFactory.Create(outputDef) : null;
                 if (t != null) cell.SetTile(t);
             }
         }

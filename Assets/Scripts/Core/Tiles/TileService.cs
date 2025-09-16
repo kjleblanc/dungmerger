@@ -5,9 +5,9 @@ using UnityEngine;
 
 namespace MergeDungeon.Core
 {
-    public class TileService : MonoBehaviour
+    public class TileService : ServicesConsumerBehaviour
     {
-        public GridManager grid;
+        public GridManager grid; // optional legacy reference; prefers services.Grid
         public TileBase tilePrefab;
         public TileDatabase tileDatabase;
         public TileFactory tileFactory;
@@ -40,7 +40,6 @@ namespace MergeDungeon.Core
 
         private void Awake()
         {
-            if (grid == null) grid = GridManager.Instance;
             // Default curves if not assigned
             if (moveCurve == null || moveCurve.keys == null || moveCurve.keys.Length == 0)
             {
@@ -82,7 +81,7 @@ namespace MergeDungeon.Core
 
         public bool TryMergeOnDrop(TileBase source, TileBase target)
         {
-            if (grid == null) return false;
+            if (services == null && grid == null) return false;
             if (source == null || target == null) return false;
             if (target.currentCell == null) return false;
 
@@ -90,33 +89,34 @@ namespace MergeDungeon.Core
             var sourceDef = source.def;
             var targetDef = target.def;
 
-            bool canMerge;
             TileDefinition.MergeRule defRule = null;
             int defToConsume = 0;
 
             if (sourceDef != null && targetDef != null)
             {
-                bool sameBucket = sourceDef == targetDef || (targetDef.mergesWith != null && sourceDef == targetDef.mergesWith);
+                // Consider merges symmetric between the two definitions
+                bool sameBucket = SameBucket(sourceDef, targetDef);
                 if (!sameBucket) return false;
 
                 var originCellDef = target.currentCell;
-                var groupDef = CollectConnectedTilesOfDefinition(originCellDef, targetDef, targetDef.mergesWith);
+                // Collect contiguous tiles matching either source or target definition (symmetric)
+                var groupDef = CollectConnectedTilesOfEither(originCellDef, sourceDef, targetDef);
                 if (source.currentCell != null)
                     groupDef.Remove(source.currentCell);
                 int totalWithDropDef = groupDef.Count + 1;
 
-                if (totalWithDropDef >= 5 && targetDef.fiveOfAKind != null && targetDef.fiveOfAKind.output != null)
+                // Pick rule from the definition that actually defines it
+                if (totalWithDropDef >= 5)
                 {
-                    defRule = targetDef.fiveOfAKind;
+                    if (targetDef.fiveOfAKind != null && targetDef.fiveOfAKind.output != null) defRule = targetDef.fiveOfAKind;
+                    else if (sourceDef.fiveOfAKind != null && sourceDef.fiveOfAKind.output != null) defRule = sourceDef.fiveOfAKind;
                 }
-                else if (totalWithDropDef >= 3 && targetDef.threeOfAKind != null && targetDef.threeOfAKind.output != null)
+                if (defRule == null && totalWithDropDef >= 3)
                 {
-                    defRule = targetDef.threeOfAKind;
+                    if (targetDef.threeOfAKind != null && targetDef.threeOfAKind.output != null) defRule = targetDef.threeOfAKind;
+                    else if (sourceDef.threeOfAKind != null && sourceDef.threeOfAKind.output != null) defRule = sourceDef.threeOfAKind;
                 }
-                else
-                {
-                    return false;
-                }
+                if (defRule == null) return false;
 
                 defToConsume = Mathf.Max(2, defRule.countToConsume);
                 
@@ -144,9 +144,59 @@ namespace MergeDungeon.Core
             return false;
         }
 
+        private static bool SameBucket(TileDefinition a, TileDefinition b)
+        {
+            if (a == null || b == null) return false;
+            if (a == b) return true;
+            if (a.mergesWith == b) return true;
+            if (b.mergesWith == a) return true;
+            return false;
+        }
+
+        public List<BoardCell> CollectConnectedTilesOfEither(BoardCell originCell, TileDefinition a, TileDefinition b)
+        {
+            var visited = new HashSet<BoardCell>();
+            var list = new List<BoardCell>();
+            var q = new Queue<BoardCell>();
+            if (originCell == null) return list;
+            visited.Add(originCell);
+            q.Enqueue(originCell);
+            while (q.Count > 0)
+            {
+                var c = q.Dequeue();
+                if (c.tile != null)
+                {
+                    var td = c.tile.def;
+                    if (td != null && (td == a || td == b))
+                    {
+                        list.Add(c);
+                        TryEnqueue(c.x + 1, c.y);
+                        TryEnqueue(c.x - 1, c.y);
+                        TryEnqueue(c.x, c.y + 1);
+                        TryEnqueue(c.x, c.y - 1);
+                    }
+                }
+            }
+            return list;
+
+            void TryEnqueue(int x, int y)
+            {
+                var n = services != null && services.Board != null ? services.Board.GetCell(x, y) : null;
+                if (n != null && !visited.Contains(n))
+                {
+                    visited.Add(n);
+                    var nd = n.tile != null ? n.tile.def : null;
+                    if (nd != null && (nd == a || nd == b))
+                    {
+                        q.Enqueue(n);
+                    }
+                }
+            }
+        }
+
         public IEnumerator AnimateMerge(BoardCell origin, List<BoardCell> consumed, System.Action onComplete)
         {
-            var dragLayer = GridManager.Instance.dragLayer;
+                var dragLayer = services != null && services.DragLayer != null ? services.DragLayer.dragLayer : null;
             var rts = new List<RectTransform>();
             var startPos = new List<Vector3>();
             var startScale = new List<Vector3>();
@@ -302,7 +352,7 @@ namespace MergeDungeon.Core
                 }
                 if (second == null)
                 {
-                    var empties = grid.CollectEmptyCells();
+                    var empties = services != null && services.Board != null ? services.Board.CollectEmptyCells() : new List<BoardCell>();
                     if (empties.Count > 0)
                         second = empties[Random.Range(0, empties.Count)];
                 }
@@ -382,22 +432,21 @@ namespace MergeDungeon.Core
 
         private RectTransform GetShakeTarget()
         {
-            if (grid != null && grid.boardController != null && grid.boardController.boardContainer != null)
-                return grid.boardController.boardContainer;
-            if (grid != null && grid.dragLayer != null)
-                return grid.dragLayer as RectTransform;
+            if (services != null && services.Board != null && services.Board.boardContainer != null)
+                return services.Board.boardContainer;
+            if (services != null && services.DragLayer != null && services.DragLayer.dragLayer != null)
+                return services.DragLayer.dragLayer as RectTransform;
             return null;
         }
 
         private Transform GetFxLayerParent()
         {
             // Prefer FX layer if available; otherwise default to drag layer
-            var gm = GridManager.Instance;
-            if (gm != null)
+            if (services != null)
             {
-                var vfx = gm.vfxManager;
+                var vfx = services.Fx;
                 if (vfx != null && vfx.fxLayer != null) return vfx.fxLayer;
-                if (gm.dragLayer != null) return gm.dragLayer;
+                if (services.DragLayer != null && services.DragLayer.dragLayer != null) return services.DragLayer.dragLayer;
             }
             return null;
         }
@@ -429,7 +478,7 @@ namespace MergeDungeon.Core
 
             void TryEnqueue(int x, int y)
             {
-                var n = grid.GetCell(x, y);
+                var n = services != null && services.Board != null ? services.Board.GetCell(x, y) : null;
                 if (n != null && !visited.Contains(n))
                 {
                     visited.Add(n);

@@ -1,32 +1,29 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using MergeDungeon.Core;
 
 namespace MergeDungeon.Core
 {
-	public class EnemyCoordinator : MonoBehaviour
+	public class EnemyCoordinator : ServicesConsumerBehaviour
 	{
-		public GridManager grid;
 		public VoidEventChannelSO advanceTick;
-
-		private void Awake()
-		{
-			if (grid == null) grid = GridManager.Instance;
-		}
 
 		private void OnEnable()
 		{
+			base.OnEnable();
 			if (advanceTick != null) advanceTick.Raised += OnAdvance;
 		}
 
 		private void OnDisable()
 		{
 			if (advanceTick != null) advanceTick.Raised -= OnAdvance;
+			base.OnDisable();
 		}
 
 		private void OnAdvance()
 		{
-			if (grid == null) grid = GridManager.Instance;
+			Debug.Log("EnemyCoordinator.OnAdvance");
+			var grid = services != null ? services.Grid : null;
 			if (grid == null) return;
 			List<EnemyController> enemies = grid.GetEnemiesSnapshot();
 			if (enemies == null || enemies.Count == 0) return;

@@ -149,7 +149,6 @@ GameObject:
   - component: {fileID: 5668592312224577073}
   - component: {fileID: 7073767222163567297}
   - component: {fileID: 9041613371303601300}
-  - component: {fileID: 795424026369556417}
   m_Layer: 5
   m_Name: PF_Tile
   m_TagString: Untagged
@@ -239,23 +238,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e92bd5bc0ee5fde43b9bf059fbb82410, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.TileBase
+  servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
   def: {fileID: 11400000, guid: f0b2978e87502cc4aa3217349ce96797, type: 2}
   currentCell: {fileID: 0}
   lootRemaining: 0
   iconBg: {fileID: 5668592312224577073}
   label: {fileID: 7343064382040991631}
---- !u!114 &795424026369556417
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8941558469119339420}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 1, g: 1, b: 1, a: 1}
-  m_EffectDistance: {x: 2, y: 2}
-  m_UseGraphicAlpha: 1

@@ -118,5 +118,27 @@ namespace MergeDungeon.Core
             }
             return list;
         }
+
+        public BoardCell FindNearestEmptyCell(BoardCell origin)
+        {
+            if (origin == null || _cells == null) return null;
+            BoardCell best = null;
+            int bestDist = int.MaxValue;
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    var c = _cells[x, y];
+                    if (c == null || !c.IsEmpty()) continue;
+                    int dist = Mathf.Abs(c.x - origin.x) + Mathf.Abs(c.y - origin.y);
+                    if (dist < bestDist)
+                    {
+                        bestDist = dist;
+                        best = c;
+                    }
+                }
+            }
+            return best;
+        }
     }
 }

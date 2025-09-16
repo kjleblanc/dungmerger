@@ -316,6 +316,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3de8bc4fa174b1642806b4bace9831b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.HeroController
+  servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
   kind: 1
   level: 1
   exp: 0

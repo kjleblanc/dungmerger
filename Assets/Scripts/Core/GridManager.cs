@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +11,8 @@ namespace MergeDungeon.Core
 {
     public class GridManager : MonoBehaviour
     {
-        public static GridManager Instance { get; private set; }
+        [Header("Services")]
+        public GameplayServicesChannelSO servicesChannel;
         public event System.Action<EnemyController> EnemySpawned;
         public event System.Action<EnemyController> EnemyDied;
         [Header("Events")]
@@ -49,6 +50,7 @@ namespace MergeDungeon.Core
         private BoardController _board;
         private EnemySpawner _enemySpawner;
         private TileService _tileService;
+        private GameplayServicesContext _servicesContext;
         public int ActiveEnemyCount => _enemySpawner != null ? _enemySpawner.ActiveEnemyCount : 0;
         public bool IsBoardReady => _board != null && _board.IsBoardReady;
 
@@ -69,7 +71,6 @@ namespace MergeDungeon.Core
         public AbilitySpawnTable mageSpawnTable;
 
         [Header("Combat Data")]
-        // AbilityConfig deprecated; ability stats now live on TileDefinition
         public EnemyDatabase enemyDatabase;
         public VfxManager vfxManager; // optional, auto-add
         [Header("Visuals")]
@@ -77,10 +78,11 @@ namespace MergeDungeon.Core
         public HeroVisualLibrary heroVisualLibrary;
         public event System.Action EnemyAdvanced;
         public TileFactory tileFactory;
+        [Header("Progression")]
+        public AdvanceMeterController advanceMeterController;
 
         // Extracted modules (auto-initialized)
         private AdvanceMeterController _advanceMeter;
-        private EnemyMover _enemyMover;
         private VfxManager _vfx;
         private DragLayerController _drag;
         [Header("Drag Layer Sorting")]
@@ -89,82 +91,84 @@ namespace MergeDungeon.Core
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
+            CacheServices();
+            PublishServicesIfNeeded();
         }
 
         private void OnEnable()
         {
-            _board = boardController != null ? boardController : GetComponent<BoardController>();
-            if (_board == null) _board = gameObject.AddComponent<BoardController>();
+            CacheServices();
             if (Application.isPlaying)
             {
                 BuildBoard();
             }
-            if (_board != null) _board.RecomputeGridCellSize(force: true);
+            _board?.RecomputeGridCellSize(force: true);
+            PublishServices();
+            PropagateServicesChannel();
         }
 
         private void Start()
         {
-            if (Application.isPlaying)
+            CacheServices();
+            if (!Application.isPlaying)
             {
-                // Initialize drag/fx modules
-                _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
-                if (_drag == null) _drag = gameObject.AddComponent<DragLayerController>();
-                _drag.Setup();
-                _vfx = vfxManager != null ? vfxManager : GetComponent<VfxManager>();
-                if (_vfx == null) _vfx = gameObject.AddComponent<VfxManager>();
-                if (_vfx.dragLayerController == null) _vfx.dragLayerController = _drag;
-                _vfx.Setup();
-                // Initialize board controller (board built in OnEnable)
-                _board = boardController != null ? boardController : GetComponent<BoardController>();
-                if (_board == null) _board = gameObject.AddComponent<BoardController>();
-                PlaceStartingHeroes();
-                if (testEnemiesOnStart > 0)
-                {
-                    for (int i = 0; i < testEnemiesOnStart; i++)
-                    {
-                        TrySpawnEnemyTopRows();
-                    }
-                }
-                if (spawnEnemiesContinuously)
-                {
-                    StartCoroutine(SpawnEnemiesLoop());
-                }
-                // Initialize extracted modules
-                _advanceMeter = GetComponent<AdvanceMeterController>();
-                if (_advanceMeter == null) _advanceMeter = gameObject.AddComponent<AdvanceMeterController>();
+                PublishServices();
+                return;
+            }
+
+            // Initialize drag/fx modules
+            _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
+            if (_drag == null) _drag = gameObject.AddComponent<DragLayerController>();
+            _drag.Setup();
+
+            _vfx = vfxManager != null ? vfxManager : GetComponent<VfxManager>();
+            if (_vfx == null) _vfx = gameObject.AddComponent<VfxManager>();
+            if (_vfx.dragLayerController == null) _vfx.dragLayerController = _drag;
+            _vfx.Setup();
+
+            _board = boardController != null ? boardController : GetComponent<BoardController>();
+            if (_board == null) _board = gameObject.AddComponent<BoardController>();
+
+            if (_advanceMeter == null)
+            {
+                _advanceMeter = advanceMeterController != null ? advanceMeterController : GetComponent<AdvanceMeterController>();
+            }
+            if (_advanceMeter != null)
+            {
+                _advanceMeter.InitializeFrom(this);
                 RefreshEnemyAdvanceUI();
-                _enemyMover = GetComponent<EnemyMover>();
-                if (_enemyMover == null) _enemyMover = gameObject.AddComponent<EnemyMover>();
-                _enemyMover.grid = this;
-                // Initialize enemy spawner & tile service
-                _enemySpawner = enemySpawner != null ? enemySpawner : GetComponent<EnemySpawner>();
-                if (_enemySpawner == null) _enemySpawner = gameObject.AddComponent<EnemySpawner>();
-                _enemySpawner.InitializeFrom(this);
-                _tileService = tileService != null ? tileService : GetComponent<TileService>();
-                if (_tileService == null) _tileService = gameObject.AddComponent<TileService>();
-                _tileService.grid = this;
-                _tileService.tilePrefab = tilePrefab;
-                _tileService.tileDatabase = tileDatabase;
-                if (tileFactory == null) tileFactory = GetComponent<TileFactory>();
-                if (tileFactory == null) tileFactory = gameObject.AddComponent<TileFactory>();
-                // Pass defaults into factory
-                var tf = tileFactory;
-                if (tf != null)
+            }
+            else
+            {
+                Debug.LogWarning("GridManager: AdvanceMeterController missing", this);
+            }
+
+            _enemySpawner = enemySpawner != null ? enemySpawner : GetComponent<EnemySpawner>();
+            if (_enemySpawner == null) _enemySpawner = gameObject.AddComponent<EnemySpawner>();
+
+            _tileService = tileService != null ? tileService : GetComponent<TileService>();
+            if (_tileService == null) _tileService = gameObject.AddComponent<TileService>();
+
+            if (tileFactory == null) tileFactory = GetComponent<TileFactory>();
+            if (tileFactory == null) tileFactory = gameObject.AddComponent<TileFactory>();
+
+            PublishServices();
+            PropagateServicesChannel();
+
+            PlaceStartingHeroes();
+            if (testEnemiesOnStart > 0)
+            {
+                for (int i = 0; i < testEnemiesOnStart; i++)
                 {
-                    var f = tf as TileFactory;
-                    // assign via serialized fields through GetComponent won't expose private fields; rely on inspector setup
+                    TrySpawnEnemyTopRows();
                 }
-                _tileService.tileFactory = tileFactory;
+            }
+            if (spawnEnemiesContinuously)
+            {
+                StartCoroutine(SpawnEnemiesLoop());
             }
         }
 
-        // Legacy setup methods removed; handled by dedicated controllers
 
         public void ToggleSelectTile(TileBase tile)
         {
@@ -215,14 +219,14 @@ namespace MergeDungeon.Core
 
         public void RegisterHeroUse()
         {
-            if (_advanceMeter == null || _enemyMover == null) return;
+            if (_advanceMeter == null) return;
             _advanceMeter.Increment();
             _advanceMeter.RefreshUI();
+            
             if (_advanceMeter.IsFull())
             {
                 _advanceMeter.ResetMeter();
-                if (advanceTick != null) advanceTick.Raise();
-                else _enemyMover.AdvanceEnemies();
+                AdvanceEnemies();
                 _advanceMeter.RefreshUI();
                 EnemyAdvanced?.Invoke();
             }
@@ -235,7 +239,23 @@ namespace MergeDungeon.Core
 
         private void AdvanceEnemies()
         {
-            if (_enemyMover != null) _enemyMover.AdvanceEnemies();
+            Debug.Log($"AdvanceEnemies fired via {(advanceTick != null ? "advanceTick" : "direct fallback")}");
+
+            if (advanceTick != null)
+            {
+                advanceTick.Raise();
+                return;
+            }
+
+            var enemies = GetEnemiesSnapshot();
+            if (enemies == null || enemies.Count == 0) return;
+            enemies.Sort((a, b) => (b?.currentCell?.y ?? 0).CompareTo(a?.currentCell?.y ?? 0));
+            foreach (var enemy in enemies)
+            {
+                if (enemy == null) continue;
+                var mover = enemy.GetComponent<EnemyUnitMover>();
+                mover?.TryStepDown();
+            }
         }
 
         public System.Collections.Generic.List<EnemyController> GetEnemiesSnapshot()
@@ -335,9 +355,6 @@ namespace MergeDungeon.Core
             cell.SetHero(hero);
             return true;
         }
-
-        // Legacy enum-based spawns removed. Use TileFactory + TileDefinition via hero/crafting/loot systems.
-
         public bool TryFeedHero(TileBase tile, HeroController hero)
         {
             if (hero == null) return false;
@@ -467,5 +484,96 @@ namespace MergeDungeon.Core
                 _enemySpawner.OnEnemyDied(enemy);
             }
         }
+    
+
+        private void OnDisable()
+        {
+            if (servicesChannel != null && _servicesContext != null)
+            {
+                servicesChannel.Unregister(_servicesContext);
+            }
+        }
+
+        private void CacheServices()
+        {
+            if (_board == null) _board = boardController != null ? boardController : GetComponent<BoardController>();
+            if (_enemySpawner == null) _enemySpawner = enemySpawner != null ? enemySpawner : GetComponent<EnemySpawner>();
+            if (_tileService == null) _tileService = tileService != null ? tileService : GetComponent<TileService>();
+            if (_vfx == null) _vfx = vfxManager != null ? vfxManager : GetComponent<VfxManager>();
+            if (_drag == null) _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
+            if (tileFactory == null) tileFactory = GetComponent<TileFactory>();
+            if (_advanceMeter == null)
+            {
+                _advanceMeter = advanceMeterController != null ? advanceMeterController : GetComponent<AdvanceMeterController>();
+                if (_advanceMeter != null)
+                {
+                    _advanceMeter.InitializeFrom(this);
+                }
+            }
+        }
+
+        private void PublishServicesIfNeeded()
+        {
+            if (servicesChannel == null) return;
+            if (_servicesContext == null)
+            {
+                _servicesContext = BuildServicesContext();
+                servicesChannel.Register(_servicesContext);
+            }
+        }
+
+        private void PublishServices()
+        {
+            if (servicesChannel == null) return;
+            _servicesContext = BuildServicesContext();
+            servicesChannel.Register(_servicesContext);
+        }
+
+        private GameplayServicesContext BuildServicesContext()
+        {
+            return new GameplayServicesContext(
+                this,
+                _board,
+                _tileService,
+                _enemySpawner,
+                _vfx,
+                _drag,
+                tileFactory,
+                tileDatabase,
+                enemyDatabase,
+                heroVisualLibrary,
+                enemyVisualLibrary,
+                warriorSpawnTable,
+                mageSpawnTable,
+                _advanceMeter
+            );
+        }
+
+        private void PropagateServicesChannel()
+        {
+            if (servicesChannel == null) return;
+#if UNITY_2023_1_OR_NEWER
+            var consumers = FindObjectsByType<ServicesConsumerBehaviour>(FindObjectsSortMode.None);
+#else
+            var consumers = FindObjectsOfType<ServicesConsumerBehaviour>();
+#endif
+            foreach (var c in consumers)
+            {
+                if (c != null && c.servicesChannel == null)
+                {
+                    c.servicesChannel = servicesChannel;
+                }
+            }
+        }
+
     }
 }
+
+
+
+
+
+
+
+
+

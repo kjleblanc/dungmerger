@@ -7,6 +7,8 @@ namespace MergeDungeon.Core
     [CreateAssetMenu(menuName = "MergeDungeon/Ability Spawn Table", fileName = "AbilitySpawnTable")]
     public class AbilitySpawnTable : ScriptableObject
     {
+        [Header("Optional Defaults")]
+        public TileDatabase fallbackDatabase;
         [Serializable]
         public class WeightedKind
         {
@@ -51,10 +53,8 @@ namespace MergeDungeon.Core
 
         public TileDefinition RollForLevel(int level)
         {
-            // Convenience overload: uses GridManager's database if available
-            var db = GridManager.Instance != null ? GridManager.Instance.tileDatabase : null;
-            return RollForLevel(db, level);
+            // Convenience overload: uses an optional serialized database reference
+            return RollForLevel(fallbackDatabase, level);
         }
     }
 }
-

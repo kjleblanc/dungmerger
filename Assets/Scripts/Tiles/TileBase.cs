@@ -9,7 +9,7 @@ namespace MergeDungeon.Core
 {
     [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(CanvasGroup))]
-    public class TileBase : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, ISelectable
+    public class TileBase : ServicesConsumerBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, ISelectable
     {
         // Legacy field removed; tiles are identified by TileDefinition.
         public TileDefinition def;
@@ -82,7 +82,8 @@ namespace MergeDungeon.Core
             var mgr = UISelectionManager.Instance;
             if (mgr != null) mgr.ClearSelection();
             _originalParent = transform.parent;
-            transform.SetParent(GridManager.Instance.dragLayer, true);
+            var dragLayer = services != null && services.DragLayer != null ? services.DragLayer.dragLayer : null;
+            if (dragLayer != null) transform.SetParent(dragLayer, true);
             transform.SetAsLastSibling();
             _cg.blocksRaycasts = false;
         }
@@ -90,7 +91,7 @@ namespace MergeDungeon.Core
         public void OnDrag(PointerEventData eventData)
         {
             // Convert screen position to local anchored position in the drag layer's RectTransform
-            var layer = GridManager.Instance != null ? GridManager.Instance.dragLayer : null;
+            var layer = services != null && services.DragLayer != null ? services.DragLayer.dragLayer : null;
             var layerRT = layer as RectTransform;
             if (layerRT != null)
             {
@@ -131,7 +132,7 @@ namespace MergeDungeon.Core
             var hero = go.GetComponentInParent<HeroController>();
             if (hero != null)
             {
-                if (GridManager.Instance.TryFeedHero(this, hero))
+                if (services != null && services.Grid != null && services.Grid.TryFeedHero(this, hero))
                 {
                     // Consumed by hero
                     if (currentCell != null) currentCell.ClearTileIf(this);
@@ -146,7 +147,7 @@ namespace MergeDungeon.Core
             var enemy = go.GetComponentInParent<EnemyController>();
             if (enemy != null)
             {
-                if (GridManager.Instance.TryUseAbilityOnEnemy(this, enemy))
+                if (services != null && services.Grid != null && services.Grid.TryUseAbilityOnEnemy(this, enemy))
                 {
                     if (currentCell != null) currentCell.ClearTileIf(this);
                     Destroy(gameObject);
@@ -175,7 +176,7 @@ namespace MergeDungeon.Core
             var otherTile = go.GetComponentInParent<TileBase>();
             if (otherTile != null && otherTile != this)
             {
-                if (GridManager.Instance.TryMergeOnDrop(this, otherTile))
+                if (services != null && services.Tiles != null && services.Tiles.TryMergeOnDrop(this, otherTile))
                 {
                     // Merge consumed this tile; nothing more to do
                     return;
@@ -187,7 +188,7 @@ namespace MergeDungeon.Core
 
             // Drop into a free cell
             var cell = go.GetComponentInParent<BoardCell>();
-            if (cell != null && GridManager.Instance.TryPlaceTileInCell(this, cell))
+            if (cell != null && services != null && services.Tiles != null && services.Tiles.TryPlaceTileInCell(this, cell))
             {
                 var selMgr = UISelectionManager.Instance;
                 if (selMgr != null) selMgr.HandleClick(gameObject);

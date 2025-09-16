@@ -9,6 +9,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0489678f9b6ae62448fae31ec0229cc5, type: 3}
-  m_Name: RoomChanged
-  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.RoomChangedEventChannelSO
+  m_Script: {fileID: 11500000, guid: 0683a38c4e0b3bf46a6ac75908992632, type: 3}
+  m_Name: SO_AdvanceTick
+  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.VoidEventChannelSO

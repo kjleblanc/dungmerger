@@ -148,6 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e1f379f1ed250244ba5c201ba4bb771, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.TileService
+  servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
   grid: {fileID: 812644175}
   tilePrefab: {fileID: 9041613371303601300, guid: 3b1dc137e23ca1e49931cc3777dcde38, type: 3}
   tileDatabase: {fileID: 11400000, guid: 50297c63071016f489c03ff7f66b9286, type: 2}
@@ -1385,12 +1386,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b42e3fa22d08cd54ab2dddb478526ef1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemySpawner
+  servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
   grid: {fileID: 812644175}
   enemyPrefab: {fileID: 709346071248415561, guid: e376957d9aefcfc44ae45635a89ac568, type: 3}
   enemyVisualLibrary: {fileID: 11400000, guid: 1a55b45f9c31868439f1b5ea310924a1, type: 2}
   lootBagPrefab: {fileID: -3716925628221120357, guid: 3351ce7d26c37cb4cb866f403ed528c5, type: 3}
-  slimeLootTable: {fileID: 11400000, guid: 59cb9f6699d91cc4bbc1a06c0eededba, type: 2}
-  batLootTable: {fileID: 11400000, guid: c425102e5f5e63f489cd0b10601dbfc0, type: 2}
+  slimeLootTable: {fileID: 0}
+  batLootTable: {fileID: 0}
   tilePrefabForFallback: {fileID: 9041613371303601300, guid: 3b1dc137e23ca1e49931cc3777dcde38, type: 3}
   slimeLootBagDef: {fileID: 0}
   batLootBagDef: {fileID: 0}
@@ -2467,6 +2469,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c94bd8d312802b4bb47f6f34ea5ff47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.GridManager
+  servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
   advanceTick: {fileID: 11400000, guid: 2753776bcfcaea041956efc657413ae6, type: 2}
   dragLayerController: {fileID: 384231589}
   tilePrefab: {fileID: 9041613371303601300, guid: 3b1dc137e23ca1e49931cc3777dcde38, type: 3}
@@ -2482,11 +2485,11 @@ MonoBehaviour:
   enemySpawner: {fileID: 513218070}
   tileService: {fileID: 7095150}
   lootBagPrefab: {fileID: -3716925628221120357, guid: 3351ce7d26c37cb4cb866f403ed528c5, type: 3}
-  slimeLootTable: {fileID: 11400000, guid: 59cb9f6699d91cc4bbc1a06c0eededba, type: 2}
-  batLootTable: {fileID: 11400000, guid: c425102e5f5e63f489cd0b10601dbfc0, type: 2}
+  slimeLootTable: {fileID: 0}
+  batLootTable: {fileID: 0}
   tileDatabase: {fileID: 11400000, guid: 50297c63071016f489c03ff7f66b9286, type: 2}
   warriorSpawnTable: {fileID: 11400000, guid: 499f3f4470f9d4d4fb8d230bc70de80c, type: 2}
-  mageSpawnTable: {fileID: 11400000, guid: 0eb6c48c3cc3512408bc63b2a2ba40ad, type: 2}
+  mageSpawnTable: {fileID: 0}
   enemyDatabase: {fileID: 11400000, guid: 95d3a6cf4e868fc4c9fc4f8c26144a26, type: 2}
   vfxManager: {fileID: 176675694}
   enemyVisualLibrary: {fileID: 11400000, guid: 1a55b45f9c31868439f1b5ea310924a1, type: 2}
@@ -2562,7 +2565,7 @@ MonoBehaviour:
   m_ChildAlignment: 4
   m_StartCorner: 0
   m_StartAxis: 0
-  m_CellSize: {x: 106.2, y: 106.2}
+  m_CellSize: {x: 63.599995, y: 63.599995}
   m_Spacing: {x: 1, y: 1}
   m_Constraint: 1
   m_ConstraintCount: 5
@@ -2692,7 +2695,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f85259e994afa54b8415f1378e1842f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyCoordinator
-  grid: {fileID: 812644175}
+  servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
   advanceTick: {fileID: 11400000, guid: 2753776bcfcaea041956efc657413ae6, type: 2}
 --- !u!1 &939038657
 GameObject:
@@ -3681,7 +3684,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f19573e0942c344a89e9cf256f81ac7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.GameplayInput
-  grid: {fileID: 812644175}
+  servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
   uiRaycaster: {fileID: 613745272}
   eventSystem: {fileID: 1113936699}
   dragThresholdPixels: 8
@@ -4299,7 +4302,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1681628514}
   - component: {fileID: 1681628511}
-  - component: {fileID: 1681628513}
   - component: {fileID: 1681628512}
   m_Layer: 0
   m_Name: VFX Overlay
@@ -4403,14 +4405,6 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!81 &1681628513
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1681628510}
-  m_Enabled: 1
 --- !u!4 &1681628514
 Transform:
   m_ObjectHideFlags: 0
@@ -4692,6 +4686,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1496053bbc859c94087b7666c6f80ef7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.DungeonManager
+  servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
   roomsPerFloor: 5
   nextRoomDelay: 1
   autoStart: 1

@@ -6,10 +6,9 @@ using UnityEngine.UI;
 
 namespace MergeDungeon.Core
 {
-	public class GameplayInput : MonoBehaviour
+	public class GameplayInput : ServicesConsumerBehaviour
 	{
 		[Header("Refs")]
-		public GridManager grid;
 		public GraphicRaycaster uiRaycaster;
 		public EventSystem eventSystem;
 
@@ -22,7 +21,6 @@ namespace MergeDungeon.Core
 
 		private void Awake()
 		{
-			if (grid == null) grid = GridManager.Instance;
 			if (eventSystem == null) eventSystem = EventSystem.current;
 			if (uiRaycaster == null)
 			{
@@ -97,15 +95,15 @@ namespace MergeDungeon.Core
 		private void HandleDrop(Vector2 screenPos)
 		{
 			var targetCell = RaycastTopCell(screenPos);
-			if (targetCell == null || grid == null || _draggedTile == null) return;
+			if (targetCell == null || services == null || _draggedTile == null) return;
 			// If target has a tile, try merge first
 			var targetTile = targetCell.tile;
 			if (targetTile != null)
 			{
-				if (grid.TryMergeOnDrop(_draggedTile, targetTile)) return;
+				if (services.Tiles != null && services.Tiles.TryMergeOnDrop(_draggedTile, targetTile)) return;
 			}
 			// Otherwise try to place in cell
-			grid.TryPlaceTileInCell(_draggedTile, targetCell);
+			services.Tiles?.TryPlaceTileInCell(_draggedTile, targetCell);
 		}
 
 		private Vector2 ReadPointerScreen()

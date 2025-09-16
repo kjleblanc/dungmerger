@@ -238,7 +238,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41b42ac6f878e02469a278ec5b9c210e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.LootBagTile
-  def: {fileID: 0}
+  servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
+  def: {fileID: 11400000, guid: 7187611a4d721454e8485bc0f9f5568a, type: 2}
   currentCell: {fileID: 0}
   lootRemaining: 0
   iconBg: {fileID: 5668592312224577073}

@@ -9,11 +9,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 48dd8dfbcc74ae043bb8d2612a629dfa, type: 3}
-  m_Name: LootTable
-  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.LootTable
-  minCount: 1
-  maxCount: 3
-  entries:
-  - def: {fileID: 0}
-    weight: 0
+  m_Script: {fileID: 11500000, guid: f02acb2343daae642add1c43f0bdf812, type: 3}
+  m_Name: SO_GameplayServicesChannel
+  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.GameplayServicesChannelSO
