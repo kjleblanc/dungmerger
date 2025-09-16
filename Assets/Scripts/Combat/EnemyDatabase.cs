@@ -10,13 +10,13 @@ namespace MergeDungeon.Core
         [Serializable]
         public class Entry
         {
-            public EnemyKind kind = EnemyKind.Slime;
+            public TileDefinition enemyDefinition;
             [Min(1)] public int baseHP = 1;
             public string displayNameOverride = "";
         }
 
         public List<Entry> entries = new();
-        private Dictionary<EnemyKind, Entry> _map;
+        private Dictionary<TileDefinition, Entry> _map;
 
         private void OnEnable()
         {
@@ -25,19 +25,20 @@ namespace MergeDungeon.Core
 
         public void Rebuild()
         {
-            _map = new Dictionary<EnemyKind, Entry>();
+            _map = new Dictionary<TileDefinition, Entry>();
+            if (entries == null) return;
             foreach (var e in entries)
             {
-                if (e == null) continue;
-                _map[e.kind] = e;
+                if (e == null || e.enemyDefinition == null) continue;
+                _map[e.enemyDefinition] = e;
             }
         }
 
-        public Entry Get(EnemyKind kind)
+        public Entry Get(TileDefinition definition)
         {
-            if (_map == null || _map.Count != entries.Count)
+            if (_map == null)
                 Rebuild();
-            if (_map.TryGetValue(kind, out var e)) return e;
+            if (definition != null && _map != null && _map.TryGetValue(definition, out var e)) return e;
             return null;
         }
     }

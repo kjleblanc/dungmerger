@@ -10,7 +10,7 @@ namespace MergeDungeon.Core
         [Serializable]
         public class Spawn
         {
-            public EnemyKind kind = EnemyKind.Slime;
+            public TileDefinition enemyDefinition;
             [Min(1)] public int countMin = 1;
             [Min(1)] public int countMax = 1;
             [Tooltip("If > 0, overrides base HP for this enemy.")]
@@ -30,3 +30,4 @@ namespace MergeDungeon.Core
         [Min(0)] public int perAdvanceSpawn = 1;
     }
 }
+

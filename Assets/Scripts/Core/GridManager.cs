@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -311,9 +311,9 @@ namespace MergeDungeon.Core
             if (_enemySpawner != null) _enemySpawner.TrySpawnEnemyTopRows();
         }
 
-        public EnemyController TrySpawnEnemyTopRowsOfKind(EnemyKind kind, int baseHp, bool isBoss = false)
+        public EnemyController TrySpawnEnemyTopRowsOfDefinition(TileDefinition definition, int baseHp, bool isBoss = false)
         {
-            return _enemySpawner != null ? _enemySpawner.TrySpawnEnemyTopRowsOfKind(kind, baseHp, isBoss) : null;
+            return _enemySpawner != null ? _enemySpawner.TrySpawnEnemyTopRowsOfDefinition(definition, baseHp, isBoss) : null;
         }
 
         public BoardCell GetCell(int x, int y)
@@ -568,12 +568,4 @@ namespace MergeDungeon.Core
 
     }
 }
-
-
-
-
-
-
-
-
 

@@ -8,7 +8,7 @@ namespace MergeDungeon.Core
     [RequireComponent(typeof(RectTransform))]
     public class EnemyController : ServicesConsumerBehaviour, UnityEngine.EventSystems.IPointerClickHandler, ISelectable
     {
-        public EnemyKind kind = EnemyKind.Slime;
+        public TileDefinition enemyDefinition;
         public int maxHp = 1;
         public int hp = 1;
         public bool isBoss = false;
@@ -30,7 +30,7 @@ namespace MergeDungeon.Core
             
             if (enemyVisual != null && services != null && services.EnemyVisualLibrary != null)
             {
-                var def = services.EnemyVisualLibrary.Get(kind);
+                var def = services.EnemyVisualLibrary.Get(enemyDefinition);
                 if (def != null)
                 {
                     if (def.overrideController != null)
@@ -56,14 +56,13 @@ namespace MergeDungeon.Core
         {
             if (label != null)
             {
-                label.text = isBoss ? $"BOSS {kind} {hp}/{maxHp}" : $"{kind} {hp}/{maxHp}";
+                var displayName = enemyDefinition != null ? enemyDefinition.DisplayName : "Enemy";
+                label.text = isBoss ? $"BOSS {displayName} {hp}/{maxHp}" : $"{displayName} {hp}/{maxHp}";
             }
             if (bg != null)
             {
-                if (isBoss)
-                    bg.color = new Color(0.9f, 0.6f, 0.3f);
-                else
-                    bg.color = kind == EnemyKind.Slime ? new Color(0.5f, 0.9f, 0.5f) : new Color(0.6f, 0.6f, 0.9f);
+                var baseColor = enemyDefinition != null ? enemyDefinition.backgroundTint : Color.white;
+                bg.color = isBoss ? new Color(0.9f, 0.6f, 0.3f) : baseColor;
             }
             if (healthFill != null)
             {
@@ -146,3 +145,4 @@ namespace MergeDungeon.Core
         public void OnActivateTap() { }
     }
 }
+

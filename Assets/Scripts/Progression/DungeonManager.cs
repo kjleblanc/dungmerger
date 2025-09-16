@@ -21,12 +21,21 @@ namespace MergeDungeon.Core
         [Header("State")]
         public int currentFloor = 1;
         public int currentRoom = 1;
-        
+
+        [Header("Fallback Enemies")]
+        [Tooltip("Used when no wave data is available.")]
+        public TileDefinition fallbackPrimaryEnemy;
+        [Min(1)] public int fallbackPrimaryBaseHp = 1;
+        public TileDefinition fallbackSecondaryEnemy;
+        [Min(1)] public int fallbackSecondaryBaseHp = 2;
+        public TileDefinition fallbackBossEnemy;
+        [Min(1)] public int fallbackBossBaseHp = 8;
+
         // Pending wave spawns tracking
         private EnemyWave _currentWave;
         private class PendingSpawn
         {
-            public EnemyKind kind;
+            public TileDefinition definition;
             public int remaining;
             public int hp;
             public bool isBoss;
@@ -164,8 +173,8 @@ namespace MergeDungeon.Core
                         if (s == null) continue;
                         int count = Mathf.Clamp(Random.Range(s.countMin, s.countMax + 1), 0, 999);
                         if (count <= 0) continue;
-                        int hp = ResolveHp(s.kind, currentFloor, s.hpOverride, s.hpBonusPerFloor);
-                        _pending.Add(new PendingSpawn { kind = s.kind, remaining = count, hp = hp, isBoss = s.bossFlagForAll });
+                        int hp = ResolveHp(s.enemyDefinition, currentFloor, s.hpOverride, s.hpBonusPerFloor);
+                        _pending.Add(new PendingSpawn { definition = s.enemyDefinition, remaining = count, hp = hp, isBoss = s.bossFlagForAll });
                     }
                 }
             }
@@ -180,37 +189,59 @@ namespace MergeDungeon.Core
 
         private void SpawnHeuristic(bool isBossRoom)
         {
+            if (grid == null) return;
             if (isBossRoom)
             {
-                int bossHp = 8 + currentFloor * 4;
-                grid.TrySpawnEnemyTopRowsOfKind(EnemyKind.Bat, bossHp, isBoss: true);
+                var bossDef = fallbackBossEnemy ?? fallbackPrimaryEnemy ?? fallbackSecondaryEnemy;
+                if (bossDef == null) return;
+                int bossHp = ResolveHp(bossDef, currentFloor, 0, 0);
+                bossHp = Mathf.Max(1, bossHp + currentFloor * 4);
+                grid.TrySpawnEnemyTopRowsOfDefinition(bossDef, bossHp, isBoss: true);
                 return;
             }
+
             int total = Mathf.Clamp(2 + currentFloor + Mathf.FloorToInt((currentRoom - 1) / 2f), 2, grid.Width * 2);
             for (int i = 0; i < total; i++)
             {
-                var kind = (Random.value < 0.7f) ? EnemyKind.Slime : EnemyKind.Bat;
-                int baseHp = (kind == EnemyKind.Slime) ? (1 + currentFloor / 2) : (2 + currentFloor / 2);
-                var spawned = grid.TrySpawnEnemyTopRowsOfKind(kind, baseHp, false);
+                var def = RollFallbackEnemyDefinition();
+                if (def == null) break;
+                int baseHp = ResolveHp(def, currentFloor, 0, 0);
+                baseHp = Mathf.Max(1, baseHp + Mathf.Max(0, currentFloor / 2));
+                var spawned = grid.TrySpawnEnemyTopRowsOfDefinition(def, baseHp, false);
                 if (spawned == null) break;
             }
         }
 
+        private TileDefinition RollFallbackEnemyDefinition()
+        {
+            if (fallbackPrimaryEnemy != null && fallbackSecondaryEnemy != null)
+            {
+                return Random.value < 0.7f ? fallbackPrimaryEnemy : fallbackSecondaryEnemy;
+            }
+            return fallbackPrimaryEnemy ?? fallbackSecondaryEnemy ?? fallbackBossEnemy;
+        }
         private void BuildFallbackPending(bool isBossRoom)
         {
             _pending.Clear();
             if (isBossRoom)
             {
-                int bossHp = 8 + currentFloor * 4;
-                _pending.Add(new PendingSpawn { kind = EnemyKind.Bat, remaining = 1, hp = bossHp, isBoss = true });
+                var bossDef = fallbackBossEnemy ?? fallbackPrimaryEnemy ?? fallbackSecondaryEnemy;
+                if (bossDef != null)
+                {
+                    int bossHp = ResolveHp(bossDef, currentFloor, 0, 0);
+                    bossHp = Mathf.Max(1, bossHp + currentFloor * 4);
+                    _pending.Add(new PendingSpawn { definition = bossDef, remaining = 1, hp = bossHp, isBoss = true });
+                }
                 return;
             }
             int total = Mathf.Clamp(3 + currentFloor, 1, grid.Width * 2);
             for (int i = 0; i < total; i++)
             {
-                var kind = (Random.value < 0.7f) ? EnemyKind.Slime : EnemyKind.Bat;
-                int baseHp = (kind == EnemyKind.Slime) ? (1 + currentFloor / 2) : (2 + currentFloor / 2);
-                _pending.Add(new PendingSpawn { kind = kind, remaining = 1, hp = baseHp, isBoss = false });
+                var def = RollFallbackEnemyDefinition();
+                if (def == null) break;
+                int baseHp = ResolveHp(def, currentFloor, 0, 0);
+                baseHp = Mathf.Max(1, baseHp + Mathf.Max(0, currentFloor / 2));
+                _pending.Add(new PendingSpawn { definition = def, remaining = 1, hp = baseHp, isBoss = false });
             }
         }
 
@@ -235,7 +266,7 @@ namespace MergeDungeon.Core
                 var p = _pending[index];
                 index++;
                 if (p.remaining <= 0) continue;
-                var e = grid.TrySpawnEnemyTopRowsOfKind(p.kind, p.hp, p.isBoss);
+                var e = grid.TrySpawnEnemyTopRowsOfDefinition(p.definition, p.hp, p.isBoss);
                 if (e != null)
                 {
                     p.remaining -= 1;
@@ -252,14 +283,28 @@ namespace MergeDungeon.Core
             TrySaveState();
         }
 
-        private int ResolveHp(EnemyKind kind, int floor, int hpOverride, int hpBonusPerFloor)
+        private int ResolveHp(TileDefinition definition, int floor, int hpOverride, int hpBonusPerFloor)
         {
             if (hpOverride > 0) return hpOverride;
-            int baseHp = (kind == EnemyKind.Slime) ? 1 : 2;
-            if (grid != null && grid.enemyDatabase != null)
+            int baseHp = 1;
+            if (grid != null && grid.enemyDatabase != null && definition != null)
             {
-                var def = grid.enemyDatabase.Get(kind);
-                if (def != null) baseHp = Mathf.Max(1, def.baseHP);
+                var entry = grid.enemyDatabase.Get(definition);
+                if (entry != null) baseHp = Mathf.Max(1, entry.baseHP);
+            }
+            if (definition == null)
+            {
+                if (fallbackPrimaryEnemy != null)
+                    baseHp = Mathf.Max(baseHp, fallbackPrimaryBaseHp);
+            }
+            else
+            {
+                if (definition == fallbackPrimaryEnemy)
+                    baseHp = Mathf.Max(baseHp, fallbackPrimaryBaseHp);
+                else if (definition == fallbackSecondaryEnemy)
+                    baseHp = Mathf.Max(baseHp, fallbackSecondaryBaseHp);
+                else if (definition == fallbackBossEnemy)
+                    baseHp = Mathf.Max(baseHp, fallbackBossBaseHp);
             }
             return Mathf.Max(1, baseHp + Mathf.Max(0, hpBonusPerFloor) * Mathf.Max(0, floor));
         }
@@ -316,3 +361,4 @@ namespace MergeDungeon.Core
 		}
     }
 }
+
