@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace MergeDungeon.Core
 {
@@ -27,8 +27,14 @@ namespace MergeDungeon.Core
         [Header("Board Link")]
         public TileDefinition enemyTile;
 
+        [Header("Loot")]
+        [SerializeField] private EnemyLootEmitterModule lootModule;
+
         public string Id => string.IsNullOrEmpty(id) ? name : id;
         public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
+        public EnemyLootEmitterModule LootModule => lootModule;
+        public LootContainerDefinition LootContainer => lootModule != null ? lootModule.lootContainer : null;
+        public LootTable DirectLootTable => lootModule != null ? lootModule.directLootTable : null;
 
         public int GetScaledHp(int floor)
         {

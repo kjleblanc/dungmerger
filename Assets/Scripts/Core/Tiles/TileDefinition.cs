@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MergeDungeon.Core
@@ -40,27 +41,28 @@ namespace MergeDungeon.Core
         [Header("Behaviors")]
         public bool draggable = true;
 
-        [Header("Ability")]
-        public bool canAttack;
-        public int damage = 1;
-        public AbilityArea area = AbilityArea.SingleTarget;
-        public GameObject abilityVfxPrefab;
-
         public enum FeedTarget
         {
             Stamina,
             Exp
         }
 
-        [Header("Feed")]
-        public bool canFeedHero;
-        public FeedTarget feedTarget = FeedTarget.Stamina;
-        public int feedValue = 1;
+        [Header("Modules")]
+        public List<TileModule> modules = new List<TileModule>();
 
-        [Header("Loot Bag")]
-        public LootTable lootTable;
-        [Min(0)] public int minRolls = 1;
-        [Min(0)] public int maxRolls = 1;
+        public T GetModule<T>() where T : TileModule
+        {
+            if (modules == null) return null;
+            for (int i = 0; i < modules.Count; i++)
+            {
+                if (modules[i] is T typed) return typed;
+            }
+            return null;
+        }
+
+        public TileAbilityModule AbilityModule => GetModule<TileAbilityModule>();
+        public TileFeedModule FeedModule => GetModule<TileFeedModule>();
+        public TileMergeModule MergeModule => GetModule<TileMergeModule>();
 
         [Serializable]
         public class MergeRule
@@ -72,8 +74,6 @@ namespace MergeDungeon.Core
 
         [Header("Merging")]
         public TileDefinition mergesWith; // if null, same-type merges only
-        public MergeRule threeOfAKind;
-        public MergeRule fiveOfAKind;
 
         public string Id => string.IsNullOrEmpty(id) ? name : id;
         public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;

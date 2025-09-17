@@ -24,4 +24,4 @@ MonoBehaviour:
   startingHp: 100
   maxHp: 100
   spawnTable: {fileID: 11400000, guid: 499f3f4470f9d4d4fb8d230bc70de80c, type: 2}
-  heroTile: {fileID: 11400000, guid: f0b2978e87502cc4aa3217349ce96797, type: 2}
+  heroTile: {fileID: 0}

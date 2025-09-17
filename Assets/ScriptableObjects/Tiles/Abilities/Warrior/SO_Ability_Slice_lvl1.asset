@@ -21,22 +21,7 @@ MonoBehaviour:
   backgroundTint: {r: 0, g: 0.5332718, b: 1, a: 1}
   prefabOverride: {fileID: 0}
   draggable: 1
-  canAttack: 1
-  damage: 1
-  area: 0
-  abilityVfxPrefab: {fileID: 8227109043669110193, guid: 9a8eca1c721c1ec47a7e599deecbb55b, type: 3}
-  canFeedHero: 0
-  feedTarget: 0
-  feedValue: 1
-  lootTable: {fileID: 0}
-  minRolls: 1
-  maxRolls: 1
+  modules:
+  - {fileID: 11400000, guid: 298fde4a85a2e8740b2888e7e2725d4d, type: 2}
+  - {fileID: 11400000, guid: c26bfb99685ad354184de43ed8564def, type: 2}
   mergesWith: {fileID: 11400000}
-  threeOfAKind:
-    countToConsume: 3
-    output: {fileID: 11400000, guid: 1154fc05acfad4e46b1302497783d77d, type: 2}
-    outputCount: 1
-  fiveOfAKind:
-    countToConsume: 5
-    output: {fileID: 11400000, guid: 1154fc05acfad4e46b1302497783d77d, type: 2}
-    outputCount: 2

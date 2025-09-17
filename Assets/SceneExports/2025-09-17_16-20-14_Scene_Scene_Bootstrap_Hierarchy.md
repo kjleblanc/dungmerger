@@ -1,7 +1,7 @@
 # Scene: Scene_Bootstrap
 
 - Unity: 6000.2.0b2
-- Exported: 2025-09-15 20:44:54
+- Exported: 2025-09-17 16:20:14
 
 - Main Camera (active: true)
   - Scripts:

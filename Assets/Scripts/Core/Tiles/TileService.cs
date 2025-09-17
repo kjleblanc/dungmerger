@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -104,17 +104,20 @@ namespace MergeDungeon.Core
                 if (source.currentCell != null)
                     groupDef.Remove(source.currentCell);
                 int totalWithDropDef = groupDef.Count + 1;
+                var sourceMerge = sourceDef != null ? sourceDef.MergeModule : null;
+                var targetMerge = targetDef != null ? targetDef.MergeModule : null;
+
 
                 // Pick rule from the definition that actually defines it
                 if (totalWithDropDef >= 5)
                 {
-                    if (targetDef.fiveOfAKind != null && targetDef.fiveOfAKind.output != null) defRule = targetDef.fiveOfAKind;
-                    else if (sourceDef.fiveOfAKind != null && sourceDef.fiveOfAKind.output != null) defRule = sourceDef.fiveOfAKind;
+                    if (targetMerge != null && targetMerge.fiveOfAKind != null && targetMerge.fiveOfAKind.output != null) defRule = targetMerge.fiveOfAKind;
+                    else if (sourceMerge != null && sourceMerge.fiveOfAKind != null && sourceMerge.fiveOfAKind.output != null) defRule = sourceMerge.fiveOfAKind;
                 }
                 if (defRule == null && totalWithDropDef >= 3)
                 {
-                    if (targetDef.threeOfAKind != null && targetDef.threeOfAKind.output != null) defRule = targetDef.threeOfAKind;
-                    else if (sourceDef.threeOfAKind != null && sourceDef.threeOfAKind.output != null) defRule = sourceDef.threeOfAKind;
+                    if (targetMerge != null && targetMerge.threeOfAKind != null && targetMerge.threeOfAKind.output != null) defRule = targetMerge.threeOfAKind;
+                    else if (sourceMerge != null && sourceMerge.threeOfAKind != null && sourceMerge.threeOfAKind.output != null) defRule = sourceMerge.threeOfAKind;
                 }
                 if (defRule == null) return false;
 

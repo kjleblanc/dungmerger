@@ -1390,14 +1390,6 @@ MonoBehaviour:
   grid: {fileID: 812644175}
   enemyPrefab: {fileID: 709346071248415561, guid: e376957d9aefcfc44ae45635a89ac568, type: 3}
   enemyVisualLibrary: {fileID: 11400000, guid: 1a55b45f9c31868439f1b5ea310924a1, type: 2}
-  lootBagPrefab: {fileID: -3716925628221120357, guid: 3351ce7d26c37cb4cb866f403ed528c5, type: 3}
-  tilePrefabForFallback: {fileID: 9041613371303601300, guid: 3b1dc137e23ca1e49931cc3777dcde38, type: 3}
-  spawnConfigs:
-  - enemyDefinition: {fileID: 0}
-    defaultSpawnWeight: 0
-    fallbackBaseHp: 0
-    lootBagDefinition: {fileID: 0}
-    lootTable: {fileID: 0}
 --- !u!4 &513218071
 Transform:
   m_ObjectHideFlags: 0
@@ -2477,18 +2469,11 @@ MonoBehaviour:
   tilePrefab: {fileID: 9041613371303601300, guid: 3b1dc137e23ca1e49931cc3777dcde38, type: 3}
   enemyPrefab: {fileID: 709346071248415561, guid: e376957d9aefcfc44ae45635a89ac568, type: 3}
   heroPrefab: {fileID: 4576869639978292603, guid: 8ad7f338ecfd30a43b2f711f1b79c6b5, type: 3}
-  enemySpawnInterval: 3
-  enemySpawnAccel: 0.95
   heroesBottomRow: 0
   restrictHeroesToBottomRow: 1
-  spawnEnemiesContinuously: 0
-  testEnemiesOnStart: 0
   boardController: {fileID: 1309035646}
   enemySpawner: {fileID: 513218070}
   tileService: {fileID: 7095150}
-  lootBagPrefab: {fileID: -3716925628221120357, guid: 3351ce7d26c37cb4cb866f403ed528c5, type: 3}
-  slimeLootTable: {fileID: 0}
-  batLootTable: {fileID: 0}
   tileDatabase: {fileID: 11400000, guid: 50297c63071016f489c03ff7f66b9286, type: 2}
   heroDefinitions: []
   startingHeroDefinition: {fileID: 11400000, guid: f54b2a10bff9a5f46b9d98f2358aa949, type: 2}
@@ -2496,6 +2481,7 @@ MonoBehaviour:
   vfxManager: {fileID: 176675694}
   enemyVisualLibrary: {fileID: 11400000, guid: 1a55b45f9c31868439f1b5ea310924a1, type: 2}
   heroVisualLibrary: {fileID: 11400000, guid: 7ca927e79e38beb429f3e0c941f5603e, type: 2}
+  advanceMeterController: {fileID: 573016151}
   tileFactory: {fileID: 812644177}
   forceDragAbove: 1
   dragSortingOrder: 4500
@@ -2567,7 +2553,7 @@ MonoBehaviour:
   m_ChildAlignment: 4
   m_StartCorner: 0
   m_StartAxis: 0
-  m_CellSize: {x: 63.599995, y: 63.599995}
+  m_CellSize: {x: 60.199993, y: 60.199993}
   m_Spacing: {x: 1, y: 1}
   m_Constraint: 1
   m_ConstraintCount: 5

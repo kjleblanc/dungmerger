@@ -1,24 +1,33 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace MergeDungeon.Core
 {
     public class EnemyCoordinator : ServicesConsumerBehaviour
     {
+        private GridManager _subscribedGrid;
+
         protected override void OnServicesReady()
         {
             base.OnServicesReady();
-            if (services != null && services.Grid != null)
+            var grid = services != null ? services.Grid : null;
+            if (grid == null) return;
+
+            if (_subscribedGrid != null)
             {
-                services.Grid.EnemyAdvanced += OnAdvance;
+                _subscribedGrid.EnemyAdvanced -= OnAdvance;
             }
+
+            _subscribedGrid = grid;
+            _subscribedGrid.EnemyAdvanced += OnAdvance;
         }
 
         protected override void OnServicesLost()
         {
-            if (services != null && services.Grid != null)
+            if (_subscribedGrid != null)
             {
-                services.Grid.EnemyAdvanced -= OnAdvance;
+                _subscribedGrid.EnemyAdvanced -= OnAdvance;
+                _subscribedGrid = null;
             }
             base.OnServicesLost();
         }

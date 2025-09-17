@@ -50,8 +50,6 @@ namespace MergeDungeon.Core
                 return;
             }
 
-            grid.spawnEnemiesContinuously = false;
-            grid.testEnemiesOnStart = 0;
 
             grid.EnemyDied += OnEnemyDied;
             grid.EnemyAdvanced += OnEnemyAdvanced;

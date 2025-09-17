@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using MergeDungeon.Core;
@@ -32,16 +31,10 @@ namespace MergeDungeon.Core
         public HeroController heroPrefab;   // generic hero
 
         [Header("Gameplay")]
-        public float enemySpawnInterval = 3f;
-        public float enemySpawnAccel = 0.95f; // multiply interval every spawn
         public int heroesBottomRow = 0;
         public bool restrictHeroesToBottomRow = true;
 
-        [Header("Spawning Mode")]
-        public bool spawnEnemiesContinuously = false;
-        public int testEnemiesOnStart = 3;
-
-        // Layout moved to BoardController
+// Layout moved to BoardController
 
         // Delegated controllers
         public BoardController boardController; // optional external reference
@@ -58,11 +51,6 @@ namespace MergeDungeon.Core
         public TileBase SelectedTile { get; private set; }
         private Vector2 _lastBoardSize;
 
-        [Header("Loot Tables")]
-        public LootBagTile lootBagPrefab;
-        public LootTable slimeLootTable;
-        public LootTable batLootTable;
-
         [Header("Data Assets")]
         public TileDatabase tileDatabase;
 
@@ -76,6 +64,9 @@ namespace MergeDungeon.Core
         [Header("Visuals")]
         public EnemyVisualLibrary enemyVisualLibrary;
         public HeroVisualLibrary heroVisualLibrary;
+
+        [Header("Progression")]
+        public AdvanceMeterController advanceMeterController;
         public event System.Action EnemyAdvanced;
         public TileFactory tileFactory;
 
@@ -127,9 +118,22 @@ namespace MergeDungeon.Core
             _board = boardController != null ? boardController : GetComponent<BoardController>();
             if (_board == null) _board = gameObject.AddComponent<BoardController>();
 
-            if (_advanceMeter == null) _advanceMeter = GetComponent<AdvanceMeterController>();
-            if (_advanceMeter == null) _advanceMeter = gameObject.AddComponent<AdvanceMeterController>();
-            if (_advanceMeter != null) _advanceMeter.InitializeFrom(this);
+            if (_advanceMeter == null)
+            {
+                if (advanceMeterController != null)
+                    _advanceMeter = advanceMeterController;
+                else
+                    _advanceMeter = GetComponent<AdvanceMeterController>();
+            }
+            if (_advanceMeter == null)
+            {
+                _advanceMeter = FindFirstObjectByType<AdvanceMeterController>();
+            }
+            if (_advanceMeter != null)
+            {
+                _advanceMeter.InitializeFrom(this);
+                advanceMeterController = _advanceMeter;
+            }
             RefreshEnemyAdvanceUI();
 
             _enemySpawner = enemySpawner != null ? enemySpawner : GetComponent<EnemySpawner>();
@@ -146,17 +150,6 @@ namespace MergeDungeon.Core
             PropagateServicesChannel();
 
             PlaceStartingHeroes();
-            if (testEnemiesOnStart > 0)
-            {
-                for (int i = 0; i < testEnemiesOnStart; i++)
-                {
-                    TrySpawnEnemyTopRows();
-                }
-            }
-            if (spawnEnemiesContinuously)
-            {
-                StartCoroutine(SpawnEnemiesLoop());
-            }
         }
 
 
@@ -270,24 +263,6 @@ namespace MergeDungeon.Core
         public void RaiseEnemySpawned(EnemyController e) { EnemySpawned?.Invoke(e); }
         public void RaiseEnemyDied(EnemyController e) { EnemyDied?.Invoke(e); }
 
-        private IEnumerator SpawnEnemiesLoop()
-        {
-            float interval = enemySpawnInterval;
-            var wait = new WaitForSeconds(interval);
-            while (true)
-            {
-                yield return wait;
-                TrySpawnEnemyTopRows();
-                interval = Mathf.Max(1.0f, interval * enemySpawnAccel);
-                wait = new WaitForSeconds(interval);
-            }
-        }
-
-        private void TrySpawnEnemyTopRows()
-        {
-            if (_enemySpawner != null) _enemySpawner.TrySpawnEnemyTopRows();
-        }
-
         public EnemyController TrySpawnEnemyTopRowsOfDefinition(EnemyDefinition definition, int baseHp, bool isBoss = false)
         {
             return _enemySpawner != null ? _enemySpawner.TrySpawnEnemyTopRowsOfDefinition(definition, baseHp, isBoss) : null;
@@ -336,43 +311,41 @@ namespace MergeDungeon.Core
         public bool TryFeedHero(TileBase tile, HeroController hero)
         {
             if (hero == null) return false;
-            if (tile.def != null && tile.def.canFeedHero)
+            var feedModule = tile != null ? tile.def?.FeedModule : null;
+            if (feedModule == null) return false;
+
+            int value = Mathf.Max(0, feedModule.feedValue);
+            if (feedModule.feedTarget == TileDefinition.FeedTarget.Stamina)
             {
-                int v = Mathf.Max(0, tile.def.feedValue);
-                if (tile.def.feedTarget == TileDefinition.FeedTarget.Stamina)
-                {
-                    hero.GainStamina(v);
-                }
-                else
-                {
-                    hero.GainExp(v);
-                }
-                return true;
+                hero.GainStamina(value);
             }
-            return false;
+            else
+            {
+                hero.GainExp(value);
+            }
+            return true;
         }
 
         public bool TryUseAbilityOnEnemy(TileBase tile, EnemyController enemy)
         {
             if (enemy == null) return false;
 
-            int damage = 1;
-            var area = AbilityArea.SingleTarget;
-
-            if (tile.def != null && tile.def.canAttack)
+            var abilityModule = tile != null ? tile.def?.AbilityModule : null;
+            if (abilityModule == null || !abilityModule.canAttack)
             {
-                damage = Mathf.Max(0, tile.def.damage);
-                area = tile.def.area;
+                return false;
             }
-            // No legacy ability config fallback
+
+            int damage = Mathf.Max(0, abilityModule.damage);
+            var area = abilityModule.area;
 
             if (area == AbilityArea.SingleTarget)
             {
                 enemy.ApplyHit(damage);
-                if (_vfx != null && tile != null && tile.def != null && tile.def.abilityVfxPrefab != null)
+                if (_vfx != null && tile != null && abilityModule.abilityVfxPrefab != null)
                 {
                     var rt = enemy.GetComponent<RectTransform>();
-                    _vfx.SpawnAbilityFx(rt, tile.def.abilityVfxPrefab);
+                    _vfx.SpawnAbilityFx(rt, abilityModule.abilityVfxPrefab);
                 }
                 return true;
             }
@@ -481,7 +454,26 @@ namespace MergeDungeon.Core
             if (_vfx == null) _vfx = vfxManager != null ? vfxManager : GetComponent<VfxManager>();
             if (_drag == null) _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
             if (tileFactory == null) tileFactory = GetComponent<TileFactory>();
-            if (_advanceMeter == null) _advanceMeter = GetComponent<AdvanceMeterController>();
+
+            if (_advanceMeter == null)
+            {
+                if (advanceMeterController != null)
+                    _advanceMeter = advanceMeterController;
+                else
+                    _advanceMeter = GetComponent<AdvanceMeterController>();
+            }
+            if (_advanceMeter == null)
+            {
+#if UNITY_2023_1_OR_NEWER
+                _advanceMeter = FindFirstObjectByType<AdvanceMeterController>();
+#else
+                _advanceMeter = FindObjectOfType<AdvanceMeterController>();
+#endif
+            }
+            if (_advanceMeter != null)
+            {
+                advanceMeterController = _advanceMeter;
+            }
 
             if (_enemySpawner != null) _enemySpawner.InitializeFrom(this);
             if (_advanceMeter != null) _advanceMeter.InitializeFrom(this);

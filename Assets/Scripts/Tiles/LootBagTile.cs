@@ -7,41 +7,42 @@ namespace MergeDungeon.Core
     public class LootBagTile : TileBase
     {
         private bool _initialized;
+        [SerializeField] private LootContainerDefinition containerDefinition;
 
-        public void Init(LootTable table)
+        public void Init(LootContainerDefinition container)
         {
-            if (def != null)
+            containerDefinition = container;
+            lootRemaining = Mathf.Max(0, RollInitialLootCount());
+            _initialized = true;
+            RefreshVisual();
+        }
+
+        private int RollInitialLootCount()
+        {
+            if (containerDefinition != null)
             {
-                // prefer definition-based rolls
-                int min = Mathf.Max(0, def.minRolls);
-                int max = Mathf.Max(min, def.maxRolls);
-                lootRemaining = Random.Range(min, max + 1);
+                return containerDefinition.RollCount();
             }
-            else
-            {
-                // fallback: use provided table
-                lootRemaining = table != null ? table.RollCount() : lootRemaining;
-            }
+
+            return lootRemaining > 0 ? lootRemaining : 1;
+        }
+
+        private LootTable ResolveLootTable()
+        {
+            return containerDefinition != null ? containerDefinition.lootTable : null;
+        }
+
+        private void EnsureInitialized()
+        {
+            if (_initialized) return;
+            lootRemaining = Mathf.Max(0, RollInitialLootCount());
             _initialized = true;
             RefreshVisual();
         }
 
         private void Start()
         {
-            if (!_initialized && lootRemaining <= 0)
-            {
-                if (def != null)
-                {
-                    int min = Mathf.Max(0, def.minRolls);
-                    int max = Mathf.Max(min, def.maxRolls);
-                    lootRemaining = Random.Range(min, max + 1);
-                }
-                else
-                {
-                    // fallback attempt: cannot roll without a table, keep 0
-                }
-                RefreshVisual();
-            }
+            EnsureInitialized();
         }
 
         public override void OnPointerClick(PointerEventData eventData)
@@ -51,6 +52,8 @@ namespace MergeDungeon.Core
 
         public override void OnActivateTap()
         {
+            EnsureInitialized();
+
             if (lootRemaining <= 0)
             {
                 if (currentCell != null) currentCell.ClearTileIf(this);
@@ -58,18 +61,27 @@ namespace MergeDungeon.Core
                 return;
             }
 
-            bool spawned = false;
-            if (def != null && def.lootTable != null)
+            var table = ResolveLootTable();
+            if (table == null || services == null)
             {
-                var db = services != null ? services.TileDatabase : null;
-                var dropDef = def.lootTable.RollItemDefinition(db);
-                if (dropDef != null && services != null && services.Tiles != null)
+                return;
+            }
+
+            bool spawned = false;
+            var db = services.TileDatabase;
+            var tiles = services.TileFactory;
+            var board = services.Board;
+
+            if (board != null && tiles != null)
+            {
+                var empty = board.CollectEmptyCells();
+                if (empty != null && empty.Count > 0)
                 {
-                    var empty = services.Board != null ? services.Board.CollectEmptyCells() : new System.Collections.Generic.List<BoardCell>();
-                    if (empty.Count > 0)
+                    var cell = empty[Random.Range(0, empty.Count)];
+                    var dropDef = table.RollItemDefinition(db);
+                    if (dropDef != null)
                     {
-                        var cell = empty[Random.Range(0, empty.Count)];
-                        var t = services.TileFactory != null ? services.TileFactory.Create(dropDef) : null;
+                        var t = tiles.Create(dropDef);
                         if (t != null)
                         {
                             cell.SetTile(t);
@@ -77,10 +89,6 @@ namespace MergeDungeon.Core
                         }
                     }
                 }
-            }
-            else if (services != null)
-            {
-                // legacy fallback path unavailable without lootTable; do nothing
             }
 
             if (spawned)

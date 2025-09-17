@@ -45,4 +45,5 @@ MonoBehaviour:
     m_RotationOrder: 4
   movement: {fileID: 11400000, guid: f23197fe5a283634ca2e6c46b6ad5e9c, type: 2}
   attack: {fileID: 11400000, guid: 4574efdc62eb0c84ea12c0d784dff8e9, type: 2}
-  enemyTile: {fileID: 11400000, guid: f0b2978e87502cc4aa3217349ce96797, type: 2}
+  enemyTile: {fileID: 11400000, guid: cad4d03b2b3271248b96d93e16a1a2d7, type: 2}
+  lootModule: {fileID: 0}

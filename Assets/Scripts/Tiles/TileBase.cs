@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using MergeDungeon.Core;
 using TMPro;
 using UnityEngine;
@@ -212,6 +212,14 @@ namespace MergeDungeon.Core
         public void SetDefinition(TileDefinition d)
         {
             def = d;
+            if (def != null && def.modules != null)
+            {
+                for (int i = 0; i < def.modules.Count; i++)
+                {
+                    var module = def.modules[i];
+                    module?.Configure(this);
+                }
+            }
             RefreshVisual();
         }
 
