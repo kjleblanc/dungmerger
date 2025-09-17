@@ -66,20 +66,18 @@ namespace MergeDungeon.Core
         [Header("Data Assets")]
         public TileDatabase tileDatabase;
 
-        [Header("Hero Spawn Tables")]
-        public AbilitySpawnTable warriorSpawnTable;
-        public AbilitySpawnTable mageSpawnTable;
+        [Header("Heroes")]
+        public List<HeroDefinition> heroDefinitions = new List<HeroDefinition>();
+        public HeroDefinition startingHeroDefinition;
 
         [Header("Combat Data")]
-        public EnemyDatabase enemyDatabase;
+        public EnemyDefinitionDatabase enemyDefinitionDatabase;
         public VfxManager vfxManager; // optional, auto-add
         [Header("Visuals")]
         public EnemyVisualLibrary enemyVisualLibrary;
         public HeroVisualLibrary heroVisualLibrary;
         public event System.Action EnemyAdvanced;
         public TileFactory tileFactory;
-        [Header("Progression")]
-        public AdvanceMeterController advanceMeterController;
 
         // Extracted modules (auto-initialized)
         private AdvanceMeterController _advanceMeter;
@@ -129,22 +127,14 @@ namespace MergeDungeon.Core
             _board = boardController != null ? boardController : GetComponent<BoardController>();
             if (_board == null) _board = gameObject.AddComponent<BoardController>();
 
-            if (_advanceMeter == null)
-            {
-                _advanceMeter = advanceMeterController != null ? advanceMeterController : GetComponent<AdvanceMeterController>();
-            }
-            if (_advanceMeter != null)
-            {
-                _advanceMeter.InitializeFrom(this);
-                RefreshEnemyAdvanceUI();
-            }
-            else
-            {
-                Debug.LogWarning("GridManager: AdvanceMeterController missing", this);
-            }
+            if (_advanceMeter == null) _advanceMeter = GetComponent<AdvanceMeterController>();
+            if (_advanceMeter == null) _advanceMeter = gameObject.AddComponent<AdvanceMeterController>();
+            if (_advanceMeter != null) _advanceMeter.InitializeFrom(this);
+            RefreshEnemyAdvanceUI();
 
             _enemySpawner = enemySpawner != null ? enemySpawner : GetComponent<EnemySpawner>();
             if (_enemySpawner == null) _enemySpawner = gameObject.AddComponent<EnemySpawner>();
+            if (_enemySpawner != null) _enemySpawner.InitializeFrom(this);
 
             _tileService = tileService != null ? tileService : GetComponent<TileService>();
             if (_tileService == null) _tileService = gameObject.AddComponent<TileService>();
@@ -222,40 +212,18 @@ namespace MergeDungeon.Core
             if (_advanceMeter == null) return;
             _advanceMeter.Increment();
             _advanceMeter.RefreshUI();
-            
             if (_advanceMeter.IsFull())
             {
                 _advanceMeter.ResetMeter();
-                AdvanceEnemies();
-                _advanceMeter.RefreshUI();
+                advanceTick?.Raise();
                 EnemyAdvanced?.Invoke();
+                _advanceMeter.RefreshUI();
             }
         }
 
         private void RefreshEnemyAdvanceUI()
         {
             if (_advanceMeter != null) _advanceMeter.RefreshUI();
-        }
-
-        private void AdvanceEnemies()
-        {
-            Debug.Log($"AdvanceEnemies fired via {(advanceTick != null ? "advanceTick" : "direct fallback")}");
-
-            if (advanceTick != null)
-            {
-                advanceTick.Raise();
-                return;
-            }
-
-            var enemies = GetEnemiesSnapshot();
-            if (enemies == null || enemies.Count == 0) return;
-            enemies.Sort((a, b) => (b?.currentCell?.y ?? 0).CompareTo(a?.currentCell?.y ?? 0));
-            foreach (var enemy in enemies)
-            {
-                if (enemy == null) continue;
-                var mover = enemy.GetComponent<EnemyUnitMover>();
-                mover?.TryStepDown();
-            }
         }
 
         public System.Collections.Generic.List<EnemyController> GetEnemiesSnapshot()
@@ -275,18 +243,27 @@ namespace MergeDungeon.Core
 
         private void PlaceStartingHeroes()
         {
-            // Spawn only the Warrior on the bottom row
-            var warrior = Instantiate(heroPrefab);
-            warrior.kind = HeroKind.Warrior;
-            warrior.spawnTable = warriorSpawnTable;
-            int startX = Mathf.Clamp(1, 0, Mathf.Max(0, Width - 1)); // prefer column 1 if available
-            var c1 = GetCell(startX, heroesBottomRow);
-            if (c1 == null) c1 = GetCell(0, heroesBottomRow);
-            if (c1 != null)
+            if (heroPrefab == null) return;
+
+            HeroDefinition definition = startingHeroDefinition;
+            if (definition == null && heroDefinitions != null && heroDefinitions.Count > 0)
             {
-                c1.SetHero(warrior);
+                definition = heroDefinitions[0];
             }
-            warrior.RefreshVisual();
+            if (definition == null) return;
+
+            var hero = Instantiate(heroPrefab);
+            hero.SetDefinition(definition, resetStats: true);
+
+            int startX = Mathf.Clamp(1, 0, Mathf.Max(0, Width - 1));
+            var cell = GetCell(startX, heroesBottomRow);
+            if (cell == null) cell = GetCell(0, heroesBottomRow);
+            if (cell != null)
+            {
+                cell.SetHero(hero);
+            }
+            hero.RefreshVisual();
+            PropagateServicesChannel();
         }
 
         // Event raisers for module components
@@ -311,7 +288,7 @@ namespace MergeDungeon.Core
             if (_enemySpawner != null) _enemySpawner.TrySpawnEnemyTopRows();
         }
 
-        public EnemyController TrySpawnEnemyTopRowsOfDefinition(TileDefinition definition, int baseHp, bool isBoss = false)
+        public EnemyController TrySpawnEnemyTopRowsOfDefinition(EnemyDefinition definition, int baseHp, bool isBoss = false)
         {
             return _enemySpawner != null ? _enemySpawner.TrySpawnEnemyTopRowsOfDefinition(definition, baseHp, isBoss) : null;
         }
@@ -355,6 +332,7 @@ namespace MergeDungeon.Core
             cell.SetHero(hero);
             return true;
         }
+
         public bool TryFeedHero(TileBase tile, HeroController hero)
         {
             if (hero == null) return false;
@@ -485,6 +463,7 @@ namespace MergeDungeon.Core
             }
         }
     
+        
 
         private void OnDisable()
         {
@@ -502,14 +481,10 @@ namespace MergeDungeon.Core
             if (_vfx == null) _vfx = vfxManager != null ? vfxManager : GetComponent<VfxManager>();
             if (_drag == null) _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
             if (tileFactory == null) tileFactory = GetComponent<TileFactory>();
-            if (_advanceMeter == null)
-            {
-                _advanceMeter = advanceMeterController != null ? advanceMeterController : GetComponent<AdvanceMeterController>();
-                if (_advanceMeter != null)
-                {
-                    _advanceMeter.InitializeFrom(this);
-                }
-            }
+            if (_advanceMeter == null) _advanceMeter = GetComponent<AdvanceMeterController>();
+
+            if (_enemySpawner != null) _enemySpawner.InitializeFrom(this);
+            if (_advanceMeter != null) _advanceMeter.InitializeFrom(this);
         }
 
         private void PublishServicesIfNeeded()
@@ -531,6 +506,7 @@ namespace MergeDungeon.Core
 
         private GameplayServicesContext BuildServicesContext()
         {
+            IReadOnlyList<HeroDefinition> heroDefs = heroDefinitions != null ? (IReadOnlyList<HeroDefinition>)heroDefinitions : Array.Empty<HeroDefinition>();
             return new GameplayServicesContext(
                 this,
                 _board,
@@ -540,11 +516,11 @@ namespace MergeDungeon.Core
                 _drag,
                 tileFactory,
                 tileDatabase,
-                enemyDatabase,
+                enemyDefinitionDatabase,
                 heroVisualLibrary,
                 enemyVisualLibrary,
-                warriorSpawnTable,
-                mageSpawnTable,
+                heroDefs,
+                startingHeroDefinition,
                 _advanceMeter
             );
         }
@@ -568,4 +544,3 @@ namespace MergeDungeon.Core
 
     }
 }
-

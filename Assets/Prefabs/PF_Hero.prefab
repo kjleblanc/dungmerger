@@ -184,7 +184,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Label
+  m_text: Warrior L1 (3/5) HP:3/3
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -317,12 +317,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.HeroController
   servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
-  kind: 1
+  definition: {fileID: 11400000, guid: f54b2a10bff9a5f46b9d98f2358aa949, type: 2}
   level: 1
   exp: 0
   expToLevel: 2
-  stamina: 20
-  maxStamina: 20
+  stamina: 3
+  maxStamina: 5
   maxHp: 3
   hp: 3
   isDowned: 0
@@ -333,7 +333,6 @@ MonoBehaviour:
   heroVisual: {fileID: 135008343335110901}
   staminaFill: {fileID: 4107642606484860896}
   healthFill: {fileID: 0}
-  spawnTable: {fileID: 0}
   spawnCooldown: 0.2
 --- !u!225 &5854770447323527484
 CanvasGroup:
@@ -417,7 +416,7 @@ MonoBehaviour:
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
-  m_FillAmount: 1
+  m_FillAmount: 0.6
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0

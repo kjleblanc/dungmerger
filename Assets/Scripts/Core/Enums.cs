@@ -1,14 +1,6 @@
-using UnityEngine;
-
 namespace MergeDungeon.Core
 {
     // TileKind fully removed; use TileDefinition instead.
-
-    public enum HeroKind
-    {
-        Warrior,
-        Mage
-    }
 
     public enum StationType
     {

@@ -24,18 +24,17 @@ namespace MergeDungeon.Core
 
         [Header("Fallback Enemies")]
         [Tooltip("Used when no wave data is available.")]
-        public TileDefinition fallbackPrimaryEnemy;
+        public EnemyDefinition fallbackPrimaryEnemy;
         [Min(1)] public int fallbackPrimaryBaseHp = 1;
-        public TileDefinition fallbackSecondaryEnemy;
+        public EnemyDefinition fallbackSecondaryEnemy;
         [Min(1)] public int fallbackSecondaryBaseHp = 2;
-        public TileDefinition fallbackBossEnemy;
+        public EnemyDefinition fallbackBossEnemy;
         [Min(1)] public int fallbackBossBaseHp = 8;
 
-        // Pending wave spawns tracking
         private EnemyWave _currentWave;
         private class PendingSpawn
         {
-            public TileDefinition definition;
+            public EnemyDefinition definition;
             public int remaining;
             public int hp;
             public bool isBoss;
@@ -51,7 +50,6 @@ namespace MergeDungeon.Core
                 return;
             }
 
-            // Ensure GridManager doesn't auto-spawn enemies
             grid.spawnEnemiesContinuously = false;
             grid.testEnemiesOnStart = 0;
 
@@ -63,14 +61,11 @@ namespace MergeDungeon.Core
                 StartCoroutine(DeferredStartRun());
             }
             UpdateMap();
-            // try load saved state
             TryLoadState();
         }
 
         private IEnumerator DeferredStartRun()
         {
-            // Ensure GridManager completed Start() and built the board
-            // Wait at least one frame, then until grid reports ready
             yield return new WaitForEndOfFrame();
             while (grid != null && !grid.IsBoardReady)
             {
@@ -109,20 +104,13 @@ namespace MergeDungeon.Core
         private void UpdateMap()
         {
             int rpf = RoomsPerFloorForFloor(currentFloor);
-            if (mapUI != null)
-            {
-                mapUI.Set(currentFloor, currentRoom, rpf);
-            }
-            if (roomChanged != null)
-            {
-                roomChanged.Raise(currentFloor, currentRoom, rpf);
-            }
+            mapUI?.Set(currentFloor, currentRoom, rpf);
+            roomChanged?.Raise(currentFloor, currentRoom, rpf);
         }
 
         private void OnEnemyDied(EnemyController enemy)
         {
             if (grid == null) return;
-            // When the room is clear, advance
             if (grid.ActiveEnemyCount <= 0 && PendingTotal() <= 0)
             {
                 StartCoroutine(AdvanceRoomAfterDelay());
@@ -132,21 +120,12 @@ namespace MergeDungeon.Core
         private IEnumerator AdvanceRoomAfterDelay()
         {
             yield return new WaitForSeconds(nextRoomDelay);
-            AdvanceRoom();
-        }
-
-        public void AdvanceRoom()
-        {
-            int roomsThisFloor = RoomsPerFloorForFloor(currentFloor);
-            bool wasBoss = (currentRoom >= roomsThisFloor);
-            if (wasBoss)
+            currentRoom++;
+            var roomsOnFloor = RoomsPerFloorForFloor(currentFloor);
+            if (currentRoom > roomsOnFloor)
             {
                 currentFloor++;
                 currentRoom = 1;
-            }
-            else
-            {
-                currentRoom++;
             }
             UpdateMap();
             SpawnCurrentRoom();
@@ -157,11 +136,11 @@ namespace MergeDungeon.Core
         {
             if (grid == null) return;
             int roomsThisFloor = RoomsPerFloorForFloor(currentFloor);
-            bool isBossRoom = (currentRoom >= roomsThisFloor);
+            bool isBossRoom = currentRoom >= roomsThisFloor;
 
-            var pool = GetPoolForFloor(currentFloor);
             _pending.Clear();
             _currentWave = null;
+            var pool = GetPoolForFloor(currentFloor);
             if (pool != null)
             {
                 var wave = isBossRoom ? pool.RollBossWave() : pool.RollNormalWave();
@@ -170,7 +149,7 @@ namespace MergeDungeon.Core
                     _currentWave = wave;
                     foreach (var s in wave.spawns)
                     {
-                        if (s == null) continue;
+                        if (s?.enemyDefinition == null) continue;
                         int count = Mathf.Clamp(Random.Range(s.countMin, s.countMax + 1), 0, 999);
                         if (count <= 0) continue;
                         int hp = ResolveHp(s.enemyDefinition, currentFloor, s.hpOverride, s.hpBonusPerFloor);
@@ -178,10 +157,12 @@ namespace MergeDungeon.Core
                     }
                 }
             }
+
             if (_pending.Count == 0)
             {
                 BuildFallbackPending(isBossRoom);
             }
+
             int initial = Mathf.Max(1, _currentWave != null ? Mathf.Max(1, _currentWave.initialSpawn) : 1);
             SpawnPending(initial);
             UpdateMap();
@@ -196,7 +177,7 @@ namespace MergeDungeon.Core
                 if (bossDef == null) return;
                 int bossHp = ResolveHp(bossDef, currentFloor, 0, 0);
                 bossHp = Mathf.Max(1, bossHp + currentFloor * 4);
-                grid.TrySpawnEnemyTopRowsOfDefinition(bossDef, bossHp, isBoss: true);
+                SpawnEnemyUsingDefinition(bossDef, bossHp, true);
                 return;
             }
 
@@ -207,12 +188,12 @@ namespace MergeDungeon.Core
                 if (def == null) break;
                 int baseHp = ResolveHp(def, currentFloor, 0, 0);
                 baseHp = Mathf.Max(1, baseHp + Mathf.Max(0, currentFloor / 2));
-                var spawned = grid.TrySpawnEnemyTopRowsOfDefinition(def, baseHp, false);
+                var spawned = SpawnEnemyUsingDefinition(def, baseHp, false);
                 if (spawned == null) break;
             }
         }
 
-        private TileDefinition RollFallbackEnemyDefinition()
+        private EnemyDefinition RollFallbackEnemyDefinition()
         {
             if (fallbackPrimaryEnemy != null && fallbackSecondaryEnemy != null)
             {
@@ -220,6 +201,7 @@ namespace MergeDungeon.Core
             }
             return fallbackPrimaryEnemy ?? fallbackSecondaryEnemy ?? fallbackBossEnemy;
         }
+
         private void BuildFallbackPending(bool isBossRoom)
         {
             _pending.Clear();
@@ -234,6 +216,7 @@ namespace MergeDungeon.Core
                 }
                 return;
             }
+
             int total = Mathf.Clamp(3 + currentFloor, 1, grid.Width * 2);
             for (int i = 0; i < total; i++)
             {
@@ -266,7 +249,7 @@ namespace MergeDungeon.Core
                 var p = _pending[index];
                 index++;
                 if (p.remaining <= 0) continue;
-                var e = grid.TrySpawnEnemyTopRowsOfDefinition(p.definition, p.hp, p.isBoss);
+                var e = SpawnEnemyUsingDefinition(p.definition, p.hp, p.isBoss);
                 if (e != null)
                 {
                     p.remaining -= 1;
@@ -283,30 +266,26 @@ namespace MergeDungeon.Core
             TrySaveState();
         }
 
-        private int ResolveHp(TileDefinition definition, int floor, int hpOverride, int hpBonusPerFloor)
+        private int ResolveHp(EnemyDefinition definition, int floor, int hpOverride, int hpBonusPerFloor)
         {
             if (hpOverride > 0) return hpOverride;
-            int baseHp = 1;
-            if (grid != null && grid.enemyDatabase != null && definition != null)
-            {
-                var entry = grid.enemyDatabase.Get(definition);
-                if (entry != null) baseHp = Mathf.Max(1, entry.baseHP);
-            }
-            if (definition == null)
-            {
-                if (fallbackPrimaryEnemy != null)
-                    baseHp = Mathf.Max(baseHp, fallbackPrimaryBaseHp);
-            }
-            else
-            {
-                if (definition == fallbackPrimaryEnemy)
-                    baseHp = Mathf.Max(baseHp, fallbackPrimaryBaseHp);
-                else if (definition == fallbackSecondaryEnemy)
-                    baseHp = Mathf.Max(baseHp, fallbackSecondaryBaseHp);
-                else if (definition == fallbackBossEnemy)
-                    baseHp = Mathf.Max(baseHp, fallbackBossBaseHp);
-            }
+
+            int baseHp = definition != null ? definition.GetScaledHp(floor) : 1;
+
+            if (definition == fallbackPrimaryEnemy)
+                baseHp = Mathf.Max(baseHp, fallbackPrimaryBaseHp);
+            else if (definition == fallbackSecondaryEnemy)
+                baseHp = Mathf.Max(baseHp, fallbackSecondaryBaseHp);
+            else if (definition == fallbackBossEnemy)
+                baseHp = Mathf.Max(baseHp, fallbackBossBaseHp);
+
             return Mathf.Max(1, baseHp + Mathf.Max(0, hpBonusPerFloor) * Mathf.Max(0, floor));
+        }
+
+        private EnemyController SpawnEnemyUsingDefinition(EnemyDefinition definition, int hp, bool isBoss)
+        {
+            if (definition == null || grid == null) return null;
+            return grid.TrySpawnEnemyTopRowsOfDefinition(definition, hp, isBoss);
         }
 
         private FloorRoomPool GetPoolForFloor(int floor)
@@ -322,43 +301,41 @@ namespace MergeDungeon.Core
             return pool != null ? Mathf.Max(1, pool.roomsPerFloor) : Mathf.Max(1, roomsPerFloor);
         }
 
-		private async void TryLoadState()
-		{
-			var host = SaveServiceHost.Instance;
-			if (host == null) return;
-			// ensure board is ready before applying state
-			await System.Threading.Tasks.Task.Yield();
-			while (grid != null && !grid.IsBoardReady)
-			{
-				await System.Threading.Tasks.Task.Yield();
-			}
-			var (ok, state) = await host.LoadAsync();
-			if (!ok || state == null) return;
-			currentFloor = Mathf.Max(1, state.floor);
-			currentRoom = Mathf.Max(1, state.room);
-			UpdateMap();
-			SpawnCurrentRoom();
-			if (grid != null)
-			{
-				var meter = grid.GetComponent<AdvanceMeterController>();
-				if (meter != null)
-				{
-					meter.enemyAdvanceMeter = Mathf.Max(0, state.meter);
-					meter.RefreshUI();
-				}
-			}
-		}
+        private async void TryLoadState()
+        {
+            var host = SaveServiceHost.Instance;
+            if (host == null) return;
+            await System.Threading.Tasks.Task.Yield();
+            while (grid != null && !grid.IsBoardReady)
+            {
+                await System.Threading.Tasks.Task.Yield();
+            }
+            var (ok, state) = await host.LoadAsync();
+            if (!ok || state == null) return;
+            currentFloor = Mathf.Max(1, state.floor);
+            currentRoom = Mathf.Max(1, state.room);
+            UpdateMap();
+            SpawnCurrentRoom();
+            if (grid != null)
+            {
+                var meter = grid.GetComponent<AdvanceMeterController>();
+                if (meter != null)
+                {
+                    meter.enemyAdvanceMeter = Mathf.Max(0, state.meter);
+                    meter.RefreshUI();
+                }
+            }
+        }
 
-		private async void TrySaveState()
-		{
-			var host = SaveServiceHost.Instance;
-			if (host == null) return;
-			int meterVal = 0;
-			var meter = grid != null ? grid.GetComponent<AdvanceMeterController>() : null;
-			if (meter != null) meterVal = meter.enemyAdvanceMeter;
-			var state = new GameState { floor = currentFloor, room = currentRoom, meter = meterVal };
-			await host.SaveAsync(state);
-		}
+        private async void TrySaveState()
+        {
+            var host = SaveServiceHost.Instance;
+            if (host == null) return;
+            int meterVal = 0;
+            var meter = grid != null ? grid.GetComponent<AdvanceMeterController>() : null;
+            if (meter != null) meterVal = meter.enemyAdvanceMeter;
+            var state = new GameState { floor = currentFloor, room = currentRoom, meter = meterVal };
+            await host.SaveAsync(state);
+        }
     }
 }
-

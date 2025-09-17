@@ -8,7 +8,7 @@ namespace MergeDungeon.Core
         [System.Serializable]
         public class EnemySpawnConfig
         {
-            public TileDefinition enemyDefinition;
+            public EnemyDefinition enemyDefinition;
             [Min(0)] public int defaultSpawnWeight = 1;
             [Min(1)] public int fallbackBaseHp = 1;
             public TileDefinition lootBagDefinition;
@@ -45,7 +45,7 @@ namespace MergeDungeon.Core
             int totalWeight = 0;
             foreach (var config in spawnConfigs)
             {
-                if (config == null || config.enemyDefinition == null) continue;
+                if (config?.enemyDefinition == null) continue;
                 int weight = Mathf.Max(0, config.defaultSpawnWeight);
                 if (weight <= 0) continue;
                 candidates.Add(config);
@@ -63,12 +63,12 @@ namespace MergeDungeon.Core
             return candidates[candidates.Count - 1];
         }
 
-        private EnemySpawnConfig FindConfig(TileDefinition definition)
+        private EnemySpawnConfig FindConfig(EnemyDefinition definition)
         {
             if (definition == null || spawnConfigs == null) return null;
             foreach (var config in spawnConfigs)
             {
-                if (config != null && config.enemyDefinition == definition) return config;
+                if (config?.enemyDefinition == definition) return config;
             }
             return null;
         }
@@ -76,28 +76,26 @@ namespace MergeDungeon.Core
         public void TrySpawnEnemyTopRows()
         {
             var config = SelectRandomConfig();
-            if (config == null || config.enemyDefinition == null) return;
+            if (config?.enemyDefinition == null) return;
 
             int baseHp = ResolveBaseHp(config.enemyDefinition, config.fallbackBaseHp);
             TrySpawnEnemyTopRowsOfDefinition(config.enemyDefinition, baseHp, false);
         }
 
-        private int ResolveBaseHp(TileDefinition definition, int fallback)
+        private int ResolveBaseHp(EnemyDefinition definition, int fallback)
         {
-            int baseHp = Mathf.Max(1, fallback);
-            var gm = services != null ? services.Grid : grid;
-            var enemyDb = services != null ? services.EnemyDatabase : (gm != null ? gm.enemyDatabase : null);
-            if (enemyDb != null)
-            {
-                var entry = enemyDb.Get(definition);
-                if (entry != null) baseHp = Mathf.Max(1, entry.baseHP);
-            }
-            return baseHp;
+            if (definition != null) return Mathf.Max(1, definition.baseHp);
+            return Mathf.Max(1, fallback);
         }
 
-        public EnemyController TrySpawnEnemyTopRowsOfDefinition(TileDefinition definition, int baseHp, bool isBoss = false)
+        public EnemyController TrySpawnEnemyTopRowsOfDefinition(EnemyDefinition definition, int baseHp, bool isBoss = false)
         {
             if (definition == null) return null;
+            return TrySpawnEnemyTopRowsInternal(definition, baseHp, isBoss);
+        }
+
+        private EnemyController TrySpawnEnemyTopRowsInternal(EnemyDefinition definition, int baseHp, bool isBoss)
+        {
             var gm = services != null ? services.Grid : grid;
             var board = services != null ? services.Board : (gm != null ? gm.boardController : null);
             if (board == null) return null;
@@ -114,40 +112,42 @@ namespace MergeDungeon.Core
             if (candidateCells.Count == 0) return null;
 
             var cell = candidateCells[Random.Range(0, candidateCells.Count)];
-            var e = Instantiate(enemyPrefab);
-            if (e.GetComponent<EnemyUnitMover>() == null)
+            var enemy = Instantiate(enemyPrefab);
+            if (enemy.GetComponent<EnemyUnitMover>() == null)
             {
-                e.gameObject.AddComponent<EnemyUnitMover>();
+                enemy.gameObject.AddComponent<EnemyUnitMover>();
             }
-            e.enemyDefinition = definition;
-            e.isBoss = isBoss;
-            e.InitializeStats(Mathf.Max(1, baseHp));
-            cell.SetEnemy(e);
-            e.RefreshVisual();
-            if (enemyVisualLibrary != null)
+
+            enemy.SetupSpawn(definition, Mathf.Max(1, baseHp), isBoss);
+            cell.SetEnemy(enemy);
+
+            ApplyFallbackVisual(enemy, definition);
+
+            _enemies.Add(enemy);
+            gm?.RaiseEnemySpawned(enemy);
+            return enemy;
+        }
+
+        private void ApplyFallbackVisual(EnemyController enemy, EnemyDefinition definition)
+        {
+            if (enemy == null || enemyVisualLibrary == null) return;
+            if (definition != null && definition.overrideController != null) return;
+            var tile = definition != null ? definition.enemyTile : null;
+            if (tile == null) return;
+            var visualDef = enemyVisualLibrary.Get(tile);
+            if (visualDef == null) return;
+            var vis = enemy.GetComponentInChildren<EnemyVisual>();
+            if (vis == null) return;
+            if (visualDef.overrideController != null)
             {
-                var visualDef = enemyVisualLibrary.Get(definition);
-                if (visualDef != null)
-                {
-                    var vis = e.GetComponentInChildren<EnemyVisual>();
-                    if (vis != null)
-                    {
-                        if (visualDef.overrideController != null)
-                        {
-                            vis.overrideController = visualDef.overrideController;
-                            vis.ApplyOverride();
-                            vis.PlayIdle();
-                        }
-                        else if (visualDef.defaultSprite != null)
-                        {
-                            vis.SetStaticSprite(visualDef.defaultSprite);
-                        }
-                    }
-                }
+                vis.overrideController = visualDef.overrideController;
+                vis.ApplyOverride();
+                vis.PlayIdle();
             }
-            _enemies.Add(e);
-            gm?.RaiseEnemySpawned(e);
-            return e;
+            else if (visualDef.defaultSprite != null)
+            {
+                vis.SetStaticSprite(visualDef.defaultSprite);
+            }
         }
 
         public void OnEnemyDied(EnemyController enemy)
@@ -158,7 +158,7 @@ namespace MergeDungeon.Core
             var cell = enemy.currentCell;
             if (cell == null) return;
 
-            var config = FindConfig(enemy.enemyDefinition);
+            var config = FindConfig(enemy.Definition);
             var bagDef = config != null ? config.lootBagDefinition : null;
             var table = config != null ? config.lootTable : null;
             var factory = services != null ? services.TileFactory : (gm != null ? gm.tileFactory : null);
@@ -169,7 +169,6 @@ namespace MergeDungeon.Core
                 {
                     if (bagTile is LootBagTile lb)
                     {
-                        // Init to set roll count. If def has lootTable set, lb will use def rolls.
                         lb.Init(null);
                         lb.RefreshVisual();
                     }

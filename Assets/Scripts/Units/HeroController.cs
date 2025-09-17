@@ -11,17 +11,24 @@ namespace MergeDungeon.Core
     [RequireComponent(typeof(CanvasGroup))]
     public class HeroController : ServicesConsumerBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, ISelectable
     {
-        public HeroKind kind = HeroKind.Warrior;
+        [Header("Definition")]
+        [SerializeField] private HeroDefinition definition;
+        private HeroDefinition _appliedDefinition;
+
+        [Header("Progression")]
         public int level = 1;
         public int exp = 0;
         public int expToLevel = 2;
 
+        [Header("Stamina")]
         public int stamina = 3;
         public int maxStamina = 5;
         [Header("Health")]
         public int maxHp = 3;
         public int hp = 3;
         public bool isDowned = false;
+
+        public HeroDefinition Definition => definition;
 
         [HideInInspector] public BoardCell currentCell;
 
@@ -33,9 +40,8 @@ namespace MergeDungeon.Core
         public HeroVisual heroVisual;
         public Image staminaFill; // fill image 0..1
         public Image healthFill; // optional health fill 0..1
-        [Header("Spawning")]
-        public AbilitySpawnTable spawnTable;
         public float spawnCooldown = 0.2f;
+        private AbilitySpawnTable ActiveSpawnTable => definition != null ? definition.spawnTable : null;
         private CanvasGroup _cg;
         private Transform _originalParent;
         private bool _dragging;
@@ -44,6 +50,25 @@ namespace MergeDungeon.Core
         {
             _cg = GetComponent<CanvasGroup>();
             if (heroVisual == null) heroVisual = GetComponentInChildren<HeroVisual>();
+            ApplyDefinition(true);
+            RefreshVisual();
+            RefreshUI();
+        }
+
+        private void OnValidate()
+        {
+            if (!Application.isPlaying)
+            {
+                ApplyDefinition(true);
+                RefreshVisual();
+                RefreshUI();
+            }
+        }
+
+        protected override void OnServicesReady()
+        {
+            base.OnServicesReady();
+            TryApplyVisualLibrary();
         }
 
         private void Start()
@@ -51,31 +76,105 @@ namespace MergeDungeon.Core
             RefreshVisual();
             RefreshUI();
             if (heroVisual == null) heroVisual = GetComponentInChildren<HeroVisual>();
-            if (heroVisual != null)
+            TryApplyVisualLibrary();
+        }
+
+        public void SetDefinition(HeroDefinition newDefinition, bool resetStats = true)
+        {
+            definition = newDefinition;
+            ApplyDefinition(resetStats);
+            RefreshVisual();
+            RefreshUI();
+            TryApplyVisualLibrary();
+        }
+
+        private void ApplyDefinition(bool resetStats)
+        {
+            if (definition == null)
             {
-                // If no override assigned yet, try to pull from GridManager's library
-                if (heroVisual.overrideController == null && services != null && services.HeroVisualLibrary != null)
+                _appliedDefinition = null;
+                return;
+            }
+
+            bool shouldReset = resetStats || _appliedDefinition != definition;
+
+            if (shouldReset)
+            {
+                level = Mathf.Max(1, definition.startingLevel);
+                exp = Mathf.Max(0, definition.startingExp);
+                expToLevel = Mathf.Max(1, definition.expToLevel);
+                maxStamina = Mathf.Max(1, definition.maxStamina);
+                stamina = Mathf.Clamp(definition.startingStamina, 0, maxStamina);
+                maxHp = Mathf.Max(1, definition.maxHp);
+                hp = Mathf.Clamp(definition.startingHp, 0, maxHp);
+                isDowned = false;
+                _appliedDefinition = definition;
+            }
+
+            if (portrait != null && definition.portrait != null)
+            {
+                portrait.sprite = definition.portrait;
+                portrait.enabled = true;
+            }
+
+            if (bg != null && definition != null)
+            {
+                bg.color = definition.backgroundColor;
+            }
+        }
+
+        private string GetHeroName()
+        {
+            if (definition != null && !string.IsNullOrEmpty(definition.DisplayName))
+            {
+                return definition.DisplayName;
+            }
+            return gameObject != null ? gameObject.name : "Hero";
+        }
+
+        private void TryApplyVisualLibrary()
+        {
+            if (heroVisual == null) heroVisual = GetComponentInChildren<HeroVisual>();
+            if (heroVisual == null) return;
+
+            if (services != null && services.HeroVisualLibrary != null)
+            {
+                var entry = services.HeroVisualLibrary.Get(definition);
+                if (entry != null)
                 {
-                    var def = services.HeroVisualLibrary.Get(kind);
-                    if (def != null && def.overrideController != null)
+                    if (entry.overrideController != null)
                     {
-                        heroVisual.overrideController = def.overrideController;
-                        heroVisual.ApplyOverride();
+                        heroVisual.overrideController = entry.overrideController;
+                    }
+                    else if (entry.defaultSprite != null)
+                    {
+                        heroVisual.SetStaticSprite(entry.defaultSprite);
                     }
                 }
-                heroVisual.PlayIdle();
             }
+
+            if (heroVisual.overrideController != null)
+            {
+                heroVisual.ApplyOverride();
+            }
+            heroVisual.PlayIdle();
         }
 
         public void RefreshVisual()
         {
+            var heroName = GetHeroName();
             if (label != null)
             {
-                label.text = $"{kind} L{level}";
+                label.text = $"{heroName} L{level}";
             }
-            if (bg != null)
+            if (bg != null && definition != null)
             {
-                bg.color = kind == HeroKind.Warrior ? new Color(0.8f, 0.6f, 0.6f) : new Color(0.6f, 0.8f, 0.9f);
+                bg.color = definition.backgroundColor;
+            }
+            if (portrait != null && definition != null && definition.portrait != null)
+            {
+                portrait.sprite = definition.portrait;
+                portrait.enabled = true;
             }
         }
 
@@ -92,10 +191,10 @@ namespace MergeDungeon.Core
             if (label != null)
             {
                 var status = isDowned ? " DOWNED" : string.Empty;
-                label.text = $"{kind} L{level} ({stamina}/{maxStamina}) HP:{hp}/{maxHp}{status}";
+                var heroName = GetHeroName();
+                label.text = $"{heroName} L{level} ({stamina}/{maxStamina}) HP:{hp}/{maxHp}{status}";
             }
         }
-
         public void GainStamina(int amount)
         {
             stamina = Mathf.Min(maxStamina, stamina + amount);
@@ -219,14 +318,18 @@ namespace MergeDungeon.Core
 
         private TileDefinition GetSpawnDefinition()
         {
-            if (spawnTable != null)
+            var table = ActiveSpawnTable;
+            if (table != null)
             {
-                return spawnTable.RollForLevel(services != null ? services.TileDatabase : null, level);
+                if (services != null && services.TileDatabase != null)
+                {
+                    return table.RollForLevel(services.TileDatabase, level);
+                }
+                return table.RollForLevel(level);
             }
             // Fallback if no table assigned
             return null;
         }
-
         public void OnBeginDrag(PointerEventData eventData)
         {
             _dragging = true;

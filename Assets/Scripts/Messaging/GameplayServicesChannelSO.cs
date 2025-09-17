@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MergeDungeon.Core
@@ -47,11 +48,11 @@ namespace MergeDungeon.Core
             DragLayerController dragLayer,
             TileFactory tileFactory,
             TileDatabase tileDatabase,
-            EnemyDatabase enemyDatabase,
+            EnemyDefinitionDatabase enemyDefinitionDatabase,
             HeroVisualLibrary heroVisualLibrary,
             EnemyVisualLibrary enemyVisualLibrary,
-            AbilitySpawnTable warriorSpawnTable,
-            AbilitySpawnTable mageSpawnTable,
+            IReadOnlyList<HeroDefinition> heroDefinitions,
+            HeroDefinition startingHeroDefinition,
             AdvanceMeterController advanceMeter)
         {
             Grid = grid;
@@ -62,11 +63,11 @@ namespace MergeDungeon.Core
             DragLayer = dragLayer;
             TileFactory = tileFactory;
             TileDatabase = tileDatabase;
-            EnemyDatabase = enemyDatabase;
+            EnemyDefinitionDatabase = enemyDefinitionDatabase;
             HeroVisualLibrary = heroVisualLibrary;
             EnemyVisualLibrary = enemyVisualLibrary;
-            WarriorSpawnTable = warriorSpawnTable;
-            MageSpawnTable = mageSpawnTable;
+            HeroDefinitions = heroDefinitions ?? Array.Empty<HeroDefinition>();
+            StartingHeroDefinition = startingHeroDefinition;
             AdvanceMeter = advanceMeter;
         }
 
@@ -78,12 +79,14 @@ namespace MergeDungeon.Core
         public DragLayerController DragLayer { get; }
         public TileFactory TileFactory { get; }
         public TileDatabase TileDatabase { get; }
-        public EnemyDatabase EnemyDatabase { get; }
+        public EnemyDefinitionDatabase EnemyDefinitionDatabase { get; }
         public HeroVisualLibrary HeroVisualLibrary { get; }
         public EnemyVisualLibrary EnemyVisualLibrary { get; }
-        public AbilitySpawnTable WarriorSpawnTable { get; }
-        public AbilitySpawnTable MageSpawnTable { get; }
+        public IReadOnlyList<HeroDefinition> HeroDefinitions { get; }
+        public HeroDefinition StartingHeroDefinition { get; }
         public AdvanceMeterController AdvanceMeter { get; }
     }
 }
+
+
 

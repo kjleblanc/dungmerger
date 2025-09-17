@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.TileDefinition
   id: base_tile
   displayName: 
-  category: 6
+  category: 1
   icon: {fileID: 5151339588759762935, guid: dc2c70cfba954b441809204f55a9a8f8, type: 3}
   iconTint: {r: 1, g: 1, b: 1, a: 1}
   background: {fileID: 0}
@@ -24,6 +24,7 @@ MonoBehaviour:
   canAttack: 0
   damage: 1
   area: 0
+  abilityVfxPrefab: {fileID: 0}
   canFeedHero: 0
   feedTarget: 0
   feedValue: 1

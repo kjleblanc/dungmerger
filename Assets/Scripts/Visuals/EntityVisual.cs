@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 namespace MergeDungeon.Core
 {
@@ -19,6 +20,24 @@ namespace MergeDungeon.Core
         public string hitTrigger = "Hit";
         public string deathTrigger = "Death";
 
+        private Coroutine _applyOverrideRoutine;
+
+        protected virtual void OnEnable()
+        {
+            if (overrideController == null) return;
+            if (animator == null) animator = GetComponent<Animator>();
+            if (animator == null) return;
+
+            if (CanApplyAnimatorOverride())
+            {
+                ApplyAnimatorOverride();
+            }
+            else
+            {
+                ScheduleApplyOverride();
+            }
+        }
+
         protected virtual void Awake()
         {
             if (animator == null) animator = GetComponent<Animator>();
@@ -29,12 +48,53 @@ namespace MergeDungeon.Core
 
         public void ApplyOverride()
         {
-            if (animator != null && overrideController != null)
+            if (overrideController == null) return;
+            if (animator == null) animator = GetComponent<Animator>();
+            if (animator == null) return;
+
+            if (!CanApplyAnimatorOverride())
             {
-                animator.runtimeAnimatorController = overrideController;
-                animator.enabled = true;
-                // Don't disable rendering components - the animator controls what sprites are shown
+                ScheduleApplyOverride();
+                return;
             }
+
+            ApplyAnimatorOverride();
+        }
+
+        private bool CanApplyAnimatorOverride()
+        {
+            if (animator == null) return false;
+            if (!animator.gameObject.activeInHierarchy) return false;
+            if (!animator.isActiveAndEnabled) return false;
+            if (!animator.isInitialized) return false;
+            return true;
+        }
+
+        private void ApplyAnimatorOverride()
+        {
+            animator.runtimeAnimatorController = overrideController;
+            animator.enabled = true;
+        }
+
+        private void ScheduleApplyOverride()
+        {
+            if (!gameObject.activeInHierarchy) return;
+            if (_applyOverrideRoutine != null) return;
+            _applyOverrideRoutine = StartCoroutine(ApplyOverrideWhenReady());
+        }
+
+        private IEnumerator ApplyOverrideWhenReady()
+        {
+            while (animator != null && overrideController != null)
+            {
+                if (CanApplyAnimatorOverride())
+                {
+                    ApplyAnimatorOverride();
+                    break;
+                }
+                yield return null;
+            }
+            _applyOverrideRoutine = null;
         }
 
         public void SetStaticSprite(Sprite sprite)

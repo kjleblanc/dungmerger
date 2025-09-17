@@ -10,13 +10,14 @@ namespace MergeDungeon.Core
         [Serializable]
         public class Entry
         {
-            public HeroKind kind = HeroKind.Warrior;
+            public HeroDefinition definition;
             public AnimatorOverrideController overrideController;
             public Sprite defaultSprite; // optional
         }
 
         public List<Entry> entries = new();
-        private Dictionary<HeroKind, Entry> _map;
+        private Dictionary<HeroDefinition, Entry> _map;
+        private Entry _fallback;
 
         private void OnEnable()
         {
@@ -25,22 +26,27 @@ namespace MergeDungeon.Core
 
         public void Rebuild()
         {
-            _map = new Dictionary<HeroKind, Entry>();
+            _map = new Dictionary<HeroDefinition, Entry>();
+            _fallback = null;
             if (entries == null) return;
             foreach (var e in entries)
             {
                 if (e == null) continue;
-                _map[e.kind] = e;
+                if (e.definition == null)
+                {
+                    _fallback = e;
+                    continue;
+                }
+                _map[e.definition] = e;
             }
         }
 
-        public Entry Get(HeroKind kind)
+        public Entry Get(HeroDefinition definition)
         {
             if (_map == null || _map.Count != (entries?.Count ?? 0))
                 Rebuild();
-            if (_map != null && _map.TryGetValue(kind, out var e)) return e;
-            return null;
+            if (definition != null && _map != null && _map.TryGetValue(definition, out var e)) return e;
+            return _fallback;
         }
     }
 }
-

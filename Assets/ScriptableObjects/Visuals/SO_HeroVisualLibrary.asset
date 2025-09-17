@@ -13,9 +13,6 @@ MonoBehaviour:
   m_Name: SO_HeroVisualLibrary
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.HeroVisualLibrary
   entries:
-  - kind: 0
+  - definition: {fileID: 11400000, guid: f54b2a10bff9a5f46b9d98f2358aa949, type: 2}
     overrideController: {fileID: 22100000, guid: 2c3f30463f5f4a5a8ea79a7bc3b05891, type: 2}
     defaultSprite: {fileID: 0}
-  - kind: 1
-    overrideController: {fileID: 22100000, guid: 704eafb3a2ef87c4cbe5035642f629bb, type: 2}
-    defaultSprite: {fileID: 4723107735738678597, guid: e36a2d800fa0ffc4fbe04aac7f5f9b11, type: 3}

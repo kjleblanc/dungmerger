@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caf230305b9a4e42abc9feeb67cae8bb, type: 3}
+  m_Name: SO_Hero_Warrior
+  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.HeroDefinition
+  id: warrior
+  displayName: Warrior
+  backgroundColor: {r: 1, g: 1, b: 1, a: 1}
+  portrait: {fileID: 0}
+  startingLevel: 1
+  startingExp: 0
+  expToLevel: 2
+  startingStamina: 100
+  maxStamina: 100
+  startingHp: 100
+  maxHp: 100
+  spawnTable: {fileID: 11400000, guid: 499f3f4470f9d4d4fb8d230bc70de80c, type: 2}
+  heroTile: {fileID: 11400000, guid: f0b2978e87502cc4aa3217349ce96797, type: 2}

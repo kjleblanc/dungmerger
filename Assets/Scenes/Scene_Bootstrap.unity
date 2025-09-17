@@ -1391,11 +1391,13 @@ MonoBehaviour:
   enemyPrefab: {fileID: 709346071248415561, guid: e376957d9aefcfc44ae45635a89ac568, type: 3}
   enemyVisualLibrary: {fileID: 11400000, guid: 1a55b45f9c31868439f1b5ea310924a1, type: 2}
   lootBagPrefab: {fileID: -3716925628221120357, guid: 3351ce7d26c37cb4cb866f403ed528c5, type: 3}
-  slimeLootTable: {fileID: 0}
-  batLootTable: {fileID: 0}
   tilePrefabForFallback: {fileID: 9041613371303601300, guid: 3b1dc137e23ca1e49931cc3777dcde38, type: 3}
-  slimeLootBagDef: {fileID: 0}
-  batLootBagDef: {fileID: 0}
+  spawnConfigs:
+  - enemyDefinition: {fileID: 0}
+    defaultSpawnWeight: 0
+    fallbackBaseHp: 0
+    lootBagDefinition: {fileID: 0}
+    lootTable: {fileID: 0}
 --- !u!4 &513218071
 Transform:
   m_ObjectHideFlags: 0
@@ -2488,9 +2490,9 @@ MonoBehaviour:
   slimeLootTable: {fileID: 0}
   batLootTable: {fileID: 0}
   tileDatabase: {fileID: 11400000, guid: 50297c63071016f489c03ff7f66b9286, type: 2}
-  warriorSpawnTable: {fileID: 11400000, guid: 499f3f4470f9d4d4fb8d230bc70de80c, type: 2}
-  mageSpawnTable: {fileID: 0}
-  enemyDatabase: {fileID: 11400000, guid: 95d3a6cf4e868fc4c9fc4f8c26144a26, type: 2}
+  heroDefinitions: []
+  startingHeroDefinition: {fileID: 11400000, guid: f54b2a10bff9a5f46b9d98f2358aa949, type: 2}
+  enemyDefinitionDatabase: {fileID: 11400000, guid: ee8527837d8976b478c0e229b262bb8a, type: 2}
   vfxManager: {fileID: 176675694}
   enemyVisualLibrary: {fileID: 11400000, guid: 1a55b45f9c31868439f1b5ea310924a1, type: 2}
   heroVisualLibrary: {fileID: 11400000, guid: 7ca927e79e38beb429f3e0c941f5603e, type: 2}
@@ -2696,7 +2698,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyCoordinator
   servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
-  advanceTick: {fileID: 11400000, guid: 2753776bcfcaea041956efc657413ae6, type: 2}
 --- !u!1 &939038657
 GameObject:
   m_ObjectHideFlags: 0
@@ -4697,6 +4698,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e219d360d1b367c4d97ed7abacf4468a, type: 2}
   currentFloor: 1
   currentRoom: 1
+  fallbackPrimaryEnemy: {fileID: 0}
+  fallbackPrimaryBaseHp: 1
+  fallbackSecondaryEnemy: {fileID: 0}
+  fallbackSecondaryBaseHp: 2
+  fallbackBossEnemy: {fileID: 0}
+  fallbackBossBaseHp: 8
 --- !u!1 &1975916010
 GameObject:
   m_ObjectHideFlags: 0

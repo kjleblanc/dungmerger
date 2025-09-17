@@ -10,7 +10,7 @@ namespace MergeDungeon.Core
         [Serializable]
         public class Spawn
         {
-            public TileDefinition enemyDefinition;
+            public EnemyDefinition enemyDefinition;
             [Min(1)] public int countMin = 1;
             [Min(1)] public int countMax = 1;
             [Tooltip("If > 0, overrides base HP for this enemy.")]
@@ -23,6 +23,7 @@ namespace MergeDungeon.Core
 
         [Header("Wave Definition")]
         public List<Spawn> spawns = new List<Spawn>();
+
         [Header("Spawn Cadence")]
         [Tooltip("How many enemies to spawn immediately when the room starts.")]
         [Min(0)] public int initialSpawn = 1;
@@ -30,4 +31,3 @@ namespace MergeDungeon.Core
         [Min(0)] public int perAdvanceSpawn = 1;
     }
 }
-
