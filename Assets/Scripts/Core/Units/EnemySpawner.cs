@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MergeDungeon.Core
@@ -25,25 +25,74 @@ namespace MergeDungeon.Core
             return TrySpawnEnemyTopRowsInternal(definition, Mathf.Max(1, baseHp), isBoss);
         }
 
+        public EnemyController TrySpawnEnemyAtCell(EnemyDefinition definition, int baseHp, bool isBoss, BoardCell preferredCell, bool allowFallback = false)
+        {
+            if (definition == null)
+            {
+                return null;
+            }
+
+            baseHp = Mathf.Max(1, baseHp);
+
+            var gm = services != null ? services.Grid : grid;
+            var board = services != null ? services.Board : (gm != null ? gm.boardController : null);
+            if (board == null)
+            {
+                return null;
+            }
+
+            var spawned = SpawnEnemyInCell(preferredCell, definition, baseHp, isBoss, gm);
+            if (spawned != null)
+            {
+                return spawned;
+            }
+
+            return allowFallback ? TrySpawnEnemyTopRowsInternal(definition, baseHp, isBoss) : null;
+        }
+
         private EnemyController TrySpawnEnemyTopRowsInternal(EnemyDefinition definition, int baseHp, bool isBoss)
         {
             var gm = services != null ? services.Grid : grid;
             var board = services != null ? services.Board : (gm != null ? gm.boardController : null);
-            if (board == null) return null;
-
-            var candidateCells = new List<BoardCell>();
-            for (int y = board.height - 1; y >= Mathf.Max(board.height - 2, 0); y--)
+            if (board == null || definition == null)
             {
-                for (int x = 0; x < board.width; x++)
+                return null;
+            }
+
+            var profile = definition.SpawnProfile;
+
+            if (profile.TryGetExactBoardCoordinates(board.width, board.height, out var exactCoords))
+            {
+                var exactCell = board.GetCell(exactCoords.x, exactCoords.y);
+                var exactSpawn = SpawnEnemyInCell(exactCell, definition, baseHp, isBoss, gm);
+                if (exactSpawn != null)
                 {
-                    var c = board.GetCell(x, y);
-                    if (c.enemy == null && c.tile == null && c.hero == null)
-                        candidateCells.Add(c);
+                    return exactSpawn;
                 }
             }
-            if (candidateCells.Count == 0) return null;
+
+            var candidateCells = BuildCandidateCells(board, profile);
+            if (candidateCells.Count == 0)
+            {
+                return null;
+            }
 
             var cell = candidateCells[Random.Range(0, candidateCells.Count)];
+            return SpawnEnemyInCell(cell, definition, baseHp, isBoss, gm);
+        }
+
+        private bool IsCellAvailable(BoardCell cell)
+        {
+            return cell != null && cell.enemy == null && cell.tile == null && cell.hero == null;
+        }
+
+        private EnemyController SpawnEnemyInCell(BoardCell cell, EnemyDefinition definition, int baseHp, bool isBoss, GridManager gm)
+        {
+            if (!IsCellAvailable(cell) || enemyPrefab == null)
+            {
+                return null;
+            }
+
             var enemy = Instantiate(enemyPrefab);
             if (enemy.GetComponent<EnemyUnitMover>() == null)
             {
@@ -58,6 +107,71 @@ namespace MergeDungeon.Core
             _enemies.Add(enemy);
             gm?.RaiseEnemySpawned(enemy);
             return enemy;
+        }
+
+        private List<BoardCell> BuildCandidateCells(BoardController board, EnemySpawnProfile profile)
+        {
+            var result = new List<BoardCell>();
+            if (board == null || board.width <= 0 || board.height <= 0)
+            {
+                return result;
+            }
+
+            var rows = new List<int>();
+            if (profile.TryGetRowIndex(board.height, out var preferredRow))
+            {
+                rows.Add(preferredRow);
+            }
+            else
+            {
+                int top = board.height - 1;
+                int second = Mathf.Max(board.height - 2, 0);
+                rows.Add(top);
+                if (second != top)
+                {
+                    rows.Add(second);
+                }
+            }
+
+            int minColumn = 0;
+            int maxColumn = Mathf.Max(0, board.width - 1);
+            if (profile.HasColumnRange)
+            {
+                var range = profile.ClampColumnRange(board.width);
+                minColumn = Mathf.Clamp(range.x, 0, maxColumn);
+                maxColumn = Mathf.Clamp(range.y, minColumn, maxColumn);
+            }
+
+            foreach (var row in rows)
+            {
+                if (row < 0 || row >= board.height) continue;
+                for (int x = minColumn; x <= maxColumn; x++)
+                {
+                    if (x < 0 || x >= board.width) continue;
+                    var cell = board.GetCell(x, row);
+                    if (IsCellAvailable(cell))
+                    {
+                        result.Add(cell);
+                    }
+                }
+            }
+
+            if (result.Count == 0)
+            {
+                for (int y = board.height - 1; y >= Mathf.Max(board.height - 2, 0); y--)
+                {
+                    for (int x = 0; x < board.width; x++)
+                    {
+                        var cell = board.GetCell(x, y);
+                        if (IsCellAvailable(cell))
+                        {
+                            result.Add(cell);
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
 
         private void ApplyFallbackVisual(EnemyController enemy, EnemyDefinition definition)

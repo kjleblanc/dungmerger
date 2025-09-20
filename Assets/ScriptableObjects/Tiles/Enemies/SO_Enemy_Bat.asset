@@ -46,4 +46,9 @@ MonoBehaviour:
   movement: {fileID: 11400000, guid: f23197fe5a283634ca2e6c46b6ad5e9c, type: 2}
   attack: {fileID: 11400000, guid: 4574efdc62eb0c84ea12c0d784dff8e9, type: 2}
   enemyTile: {fileID: 11400000, guid: cad4d03b2b3271248b96d93e16a1a2d7, type: 2}
+  spawnProfile:
+    useExactCell: 1
+    exactCell: {x: 2, y: 0}
+    columnRange: {x: -1, y: -1}
+    rowOffsetFromTop: -1
   lootModule: {fileID: 0}

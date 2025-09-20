@@ -19,6 +19,14 @@ namespace MergeDungeon.Core
             public int hpBonusPerFloor = 0;
             [Tooltip("Marks all spawns in this entry as boss (tinted, labeled).")]
             public bool bossFlagForAll = false;
+
+            [Header("Layout")]
+            [Tooltip("Optional spawn layout specifying relative cells to use for this entry.")]
+            public EnemySpawnLayoutModule spawnLayout;
+            [Tooltip("Top-left board cell that anchors the spawn layout (x from left, y from top).")]
+            public Vector2Int layoutAnchor = Vector2Int.zero;
+            [Tooltip("If true, any remaining count beyond layout slots falls back to random placement.")]
+            public bool fillRemainderWithRandom = false;
         }
 
         [Header("Wave Definition")]
@@ -31,3 +39,4 @@ namespace MergeDungeon.Core
         [Min(0)] public int perAdvanceSpawn = 1;
     }
 }
+

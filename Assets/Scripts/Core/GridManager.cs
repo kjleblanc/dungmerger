@@ -268,6 +268,11 @@ namespace MergeDungeon.Core
             return _enemySpawner != null ? _enemySpawner.TrySpawnEnemyTopRowsOfDefinition(definition, baseHp, isBoss) : null;
         }
 
+        public EnemyController TrySpawnEnemyAtCell(EnemyDefinition definition, int baseHp, bool isBoss, BoardCell cell, bool allowFallback = false)
+        {
+            return _enemySpawner != null ? _enemySpawner.TrySpawnEnemyAtCell(definition, baseHp, isBoss, cell, allowFallback) : null;
+        }
+
         public BoardCell GetCell(int x, int y)
         {
             return _board != null ? _board.GetCell(x, y) : null;
@@ -536,3 +541,4 @@ namespace MergeDungeon.Core
 
     }
 }
+

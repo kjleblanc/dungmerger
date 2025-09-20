@@ -38,6 +38,7 @@ namespace MergeDungeon.Core
             public int remaining;
             public int hp;
             public bool isBoss;
+            public Queue<BoardCell> forcedCells;
         }
         private readonly List<PendingSpawn> _pending = new List<PendingSpawn>();
 
@@ -150,8 +151,48 @@ namespace MergeDungeon.Core
                         if (s?.enemyDefinition == null) continue;
                         int count = Mathf.Clamp(Random.Range(s.countMin, s.countMax + 1), 0, 999);
                         if (count <= 0) continue;
+
                         int hp = ResolveHp(s.enemyDefinition, currentFloor, s.hpOverride, s.hpBonusPerFloor);
-                        _pending.Add(new PendingSpawn { definition = s.enemyDefinition, remaining = count, hp = hp, isBoss = s.bossFlagForAll });
+                        var pending = new PendingSpawn
+                        {
+                            definition = s.enemyDefinition,
+                            hp = hp,
+                            isBoss = s.bossFlagForAll,
+                            remaining = 0
+                        };
+
+                        int remainder = count;
+                        if (s.spawnLayout != null)
+                        {
+                            var forcedCells = ResolveLayoutCells(s, count);
+                            if (forcedCells.Count > 0)
+                            {
+                                pending.forcedCells = new Queue<BoardCell>(forcedCells);
+                            }
+
+                            if (s.fillRemainderWithRandom)
+                            {
+                                remainder = Mathf.Max(0, count - forcedCells.Count);
+                            }
+                            else
+                            {
+                                remainder = 0;
+                            }
+
+                            if ((pending.forcedCells == null || pending.forcedCells.Count == 0) && remainder <= 0)
+                            {
+                                continue;
+                            }
+                        }
+
+                        pending.remaining = remainder;
+
+                        if (pending.remaining <= 0 && (pending.forcedCells == null || pending.forcedCells.Count == 0))
+                        {
+                            continue;
+                        }
+
+                        _pending.Add(pending);
                     }
                 }
             }
@@ -229,7 +270,15 @@ namespace MergeDungeon.Core
         private int PendingTotal()
         {
             int sum = 0;
-            foreach (var p in _pending) sum += Mathf.Max(0, p.remaining);
+            foreach (var p in _pending)
+            {
+                if (p == null) continue;
+                sum += Mathf.Max(0, p.remaining);
+                if (p.forcedCells != null)
+                {
+                    sum += p.forcedCells.Count;
+                }
+            }
             return sum;
         }
 
@@ -241,19 +290,68 @@ namespace MergeDungeon.Core
             int index = 0;
             while (spawned < count && PendingTotal() > 0 && attempts < 1000)
             {
-                attempts++;
                 if (_pending.Count == 0) break;
                 if (index >= _pending.Count) index = 0;
+
                 var p = _pending[index];
-                index++;
-                if (p.remaining <= 0) continue;
+                if (p == null)
+                {
+                    _pending.RemoveAt(index);
+                    continue;
+                }
+
+                attempts++;
+
+                bool hasForced = p.forcedCells != null && p.forcedCells.Count > 0;
+                bool hasRemaining = p.remaining > 0;
+
+                if (!hasForced && !hasRemaining)
+                {
+                    _pending.RemoveAt(index);
+                    continue;
+                }
+
+                if (hasForced)
+                {
+                    var nextCell = p.forcedCells.Dequeue();
+                    if (nextCell != null && grid != null)
+                    {
+                        var forcedEnemy = grid.TrySpawnEnemyAtCell(p.definition, p.hp, p.isBoss, nextCell, allowFallback: false);
+                        if (forcedEnemy != null)
+                        {
+                            spawned++;
+                        }
+                    }
+
+                    if ((p.forcedCells == null || p.forcedCells.Count == 0) && p.remaining <= 0)
+                    {
+                        _pending.RemoveAt(index);
+                    }
+                    else
+                    {
+                        index++;
+                    }
+                    continue;
+                }
+
                 var e = SpawnEnemyUsingDefinition(p.definition, p.hp, p.isBoss);
                 if (e != null)
                 {
                     p.remaining -= 1;
                     spawned++;
+                    if (p.remaining <= 0 && (p.forcedCells == null || p.forcedCells.Count == 0))
+                    {
+                        _pending.RemoveAt(index);
+                    }
+                    else
+                    {
+                        index++;
+                    }
                 }
-                else break;
+                else
+                {
+                    break;
+                }
             }
         }
 
@@ -284,6 +382,44 @@ namespace MergeDungeon.Core
         {
             if (definition == null || grid == null) return null;
             return grid.TrySpawnEnemyTopRowsOfDefinition(definition, hp, isBoss);
+        }
+
+        private List<BoardCell> ResolveLayoutCells(EnemyWave.Spawn spawn, int requestedCount)
+        {
+            var result = new List<BoardCell>();
+            if (grid == null || spawn == null || spawn.spawnLayout == null) return result;
+
+            var layoutCells = spawn.spawnLayout.Cells;
+            if (layoutCells == null || layoutCells.Count == 0) return result;
+
+            int boardWidth = grid.Width;
+            int boardHeight = grid.Height;
+            if (boardWidth <= 0 || boardHeight <= 0) return result;
+
+            int slots = spawn.fillRemainderWithRandom ? Mathf.Min(requestedCount, layoutCells.Count) : layoutCells.Count;
+            if (slots <= 0) return result;
+
+            var anchor = spawn.layoutAnchor;
+            var used = new HashSet<Vector2Int>();
+            foreach (var relative in layoutCells)
+            {
+                var topCoord = anchor + relative;
+                if (!used.Add(topCoord)) continue;
+                if (topCoord.x < 0 || topCoord.x >= boardWidth) continue;
+                if (topCoord.y < 0 || topCoord.y >= boardHeight) continue;
+
+                int boardY = boardHeight - 1 - topCoord.y;
+                var cell = grid.GetCell(topCoord.x, boardY);
+                if (cell == null || !cell.IsEmpty()) continue;
+
+                result.Add(cell);
+                if (result.Count >= slots)
+                {
+                    break;
+                }
+            }
+
+            return result;
         }
 
         private FloorRoomPool GetPoolForFloor(int floor)
@@ -337,3 +473,4 @@ namespace MergeDungeon.Core
         }
     }
 }
+

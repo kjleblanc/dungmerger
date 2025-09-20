@@ -191,6 +191,20 @@ namespace MergeDungeon.Core.Editor
 
         private void RemoveModule(int index, UnityEngine.Object module)
         {
+            if (index < 0 || index >= _modulesProperty.arraySize)
+            {
+                return;
+            }
+
+            var tileDef = (TileDefinition)target;
+
+            var element = _modulesProperty.GetArrayElementAtIndex(index);
+            if (element != null)
+            {
+                element.objectReferenceValue = null;
+            }
+
+            serializedObject.ApplyModifiedProperties();
             _modulesProperty.DeleteArrayElementAtIndex(index);
             serializedObject.ApplyModifiedProperties();
 
@@ -199,6 +213,30 @@ namespace MergeDungeon.Core.Editor
                 DestroyImmediate(editor);
                 _moduleEditors.Remove(module);
             }
+
+            if (module != null)
+            {
+                string modulePath = AssetDatabase.GetAssetPath(module);
+                string tilePath = AssetDatabase.GetAssetPath(tileDef);
+                bool isSubAsset = !string.IsNullOrEmpty(modulePath) && modulePath == tilePath;
+
+                if (isSubAsset)
+                {
+                    AssetDatabase.RemoveObjectFromAsset(module);
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.ImportAsset(tilePath);
+                }
+                else
+                {
+                    DestroyImmediate(module, true);
+                    AssetDatabase.SaveAssets();
+                }
+            }
+
+            EditorUtility.SetDirty(tileDef);
         }
     }
 }
+
+
+

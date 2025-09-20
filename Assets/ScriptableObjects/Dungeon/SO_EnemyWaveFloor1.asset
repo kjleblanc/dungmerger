@@ -14,10 +14,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyWave
   spawns:
   - enemyDefinition: {fileID: 11400000, guid: a1a131d64deefa74281f64cf39f0ca17, type: 2}
-    countMin: 1
-    countMax: 2
+    countMin: 5
+    countMax: 5
     hpOverride: 0
     hpBonusPerFloor: 0
     bossFlagForAll: 0
+    spawnLayout: {fileID: 0}
+    layoutAnchor: {x: 0, y: 0}
+    fillRemainderWithRandom: 0
   initialSpawn: 1
   perAdvanceSpawn: 1
+--- !u!114 &4577828627448606345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3140ec314b34efa43af229b9c4f0e72e, type: 3}
+  m_Name: SO_EnemyWaveFloor1_SpawnLayout_1
+  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemySpawnLayoutModule
+  relativeCells:
+  - {x: 0, y: 0}
