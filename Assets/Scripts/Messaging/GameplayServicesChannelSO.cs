@@ -39,6 +39,8 @@ namespace MergeDungeon.Core
     /// </summary>
     public class GameplayServicesContext
     {
+        private static readonly EnemyBenchController.SlotMetadata[] NoEnemySlots = Array.Empty<EnemyBenchController.SlotMetadata>();
+
         public GameplayServicesContext(
             GridManager grid,
             BoardController board,
@@ -46,6 +48,8 @@ namespace MergeDungeon.Core
             EnemySpawner enemies,
             VfxManager vfx,
             DragLayerController dragLayer,
+            HeroBenchController heroBench,
+            EnemyBenchController enemyBench,
             TileFactory tileFactory,
             TileDatabase tileDatabase,
             EnemyDefinitionDatabase enemyDefinitionDatabase,
@@ -61,6 +65,8 @@ namespace MergeDungeon.Core
             Enemies = enemies;
             Fx = vfx;
             DragLayer = dragLayer;
+            HeroBench = heroBench;
+            EnemyBench = enemyBench;
             TileFactory = tileFactory;
             TileDatabase = tileDatabase;
             EnemyDefinitionDatabase = enemyDefinitionDatabase;
@@ -71,12 +77,16 @@ namespace MergeDungeon.Core
             AdvanceMeter = advanceMeter;
         }
 
+        private List<EnemyBenchController.SlotMetadata> _enemyBenchSlotBuffer;
+
         public GridManager Grid { get; }
         public BoardController Board { get; }
         public TileService Tiles { get; }
         public EnemySpawner Enemies { get; }
         public VfxManager Fx { get; }
         public DragLayerController DragLayer { get; }
+        public HeroBenchController HeroBench { get; }
+        public EnemyBenchController EnemyBench { get; }
         public TileFactory TileFactory { get; }
         public TileDatabase TileDatabase { get; }
         public EnemyDefinitionDatabase EnemyDefinitionDatabase { get; }
@@ -85,8 +95,28 @@ namespace MergeDungeon.Core
         public IReadOnlyList<HeroDefinition> HeroDefinitions { get; }
         public HeroDefinition StartingHeroDefinition { get; }
         public AdvanceMeterController AdvanceMeter { get; }
+
+        public bool TryGetEnemySlotMetadata(EnemyController enemy, out EnemyBenchController.SlotMetadata metadata)
+        {
+            metadata = default;
+            return EnemyBench != null && EnemyBench.TryGetSlotMetadata(enemy, out metadata);
+        }
+
+        public IReadOnlyList<EnemyBenchController.SlotMetadata> GetEnemyBenchSlotsSnapshot()
+        {
+            if (EnemyBench == null)
+            {
+                return NoEnemySlots;
+            }
+
+            if (_enemyBenchSlotBuffer == null)
+            {
+                int initialCapacity = EnemyBench.Slots != null ? EnemyBench.Slots.Count : 4;
+                _enemyBenchSlotBuffer = new List<EnemyBenchController.SlotMetadata>(Mathf.Max(1, initialCapacity));
+            }
+
+            var snapshot = EnemyBench.GetSlotMetadataSnapshot(_enemyBenchSlotBuffer);
+            return snapshot ?? (IReadOnlyList<EnemyBenchController.SlotMetadata>)NoEnemySlots;
+        }
     }
 }
-
-
-

@@ -30,7 +30,6 @@ namespace MergeDungeon.Core
 
         public HeroDefinition Definition => definition;
 
-        [HideInInspector] public BoardCell currentCell;
 
         [Header("Visuals")]
         public Image bg;
@@ -45,6 +44,9 @@ namespace MergeDungeon.Core
         private CanvasGroup _cg;
         private Transform _originalParent;
         private bool _dragging;
+        private HeroBenchController _bench;
+        private int _benchSlotIndex = -1;
+        private RectTransform _benchSlotRoot;
 
         private void Awake()
         {
@@ -86,6 +88,67 @@ namespace MergeDungeon.Core
             RefreshVisual();
             RefreshUI();
             TryApplyVisualLibrary();
+        }
+        public void AssignBenchSlot(HeroBenchController bench, int slotIndex)
+        {
+            _bench = bench;
+            _benchSlotIndex = slotIndex;
+            _benchSlotRoot = null;
+
+            if (_bench != null)
+            {
+                if (slotIndex >= 0 && slotIndex < _bench.Slots.Count)
+                {
+                    var slot = _bench.Slots[slotIndex];
+                    if (slot != null)
+                    {
+                        _benchSlotRoot = slot.root;
+                    }
+                }
+
+                if (_benchSlotRoot == null)
+                {
+                    _benchSlotRoot = _bench.BenchRoot;
+                }
+
+                if (_benchSlotIndex >= 0)
+                {
+                    _bench.SnapHeroToSlot(this);
+                }
+            }
+            else
+            {
+                _benchSlotIndex = -1;
+            }
+        }
+
+        private void ReturnToBenchSlot()
+        {
+            if (_bench != null)
+            {
+                if (_benchSlotIndex >= 0)
+                {
+                    _bench.SnapHeroToSlot(this);
+                    return;
+                }
+            }
+
+            if (_benchSlotRoot != null)
+            {
+                var rt = GetComponent<RectTransform>();
+                if (rt != null)
+                {
+                    rt.SetParent(_benchSlotRoot, worldPositionStays: false);
+                    rt.anchoredPosition = Vector2.zero;
+                    rt.localScale = Vector3.one;
+                }
+                return;
+            }
+
+            if (_originalParent != null)
+            {
+                transform.SetParent(_originalParent, true);
+            }
         }
 
         private void ApplyDefinition(bool resetStats)
@@ -236,8 +299,7 @@ namespace MergeDungeon.Core
             var defToSpawn = GetSpawnDefinition();
             if (defToSpawn == null) return;
 
-            var board = services.Board;
-            var targetCell = board != null ? board.FindNearestEmptyCell(currentCell) : null;
+            var targetCell = grid != null ? grid.FindSpawnCellForHero(this) : null;
             if (targetCell == null) return;
 
             var tile = services.TileFactory.Create(defToSpawn);
@@ -247,14 +309,15 @@ namespace MergeDungeon.Core
 
             var tileRT = tile.GetComponent<RectTransform>();
             var heroRT = GetComponent<RectTransform>();
+            var spawnAnchor = _bench != null ? _bench.GetSpawnAnchorForHero(this) : heroRT;
             var layer = services.DragLayer != null ? services.DragLayer.dragLayer : transform.parent;
 
             grid?.NotifyHeroSpawnStarted();
 
-            if (tileRT != null && heroRT != null)
+            if (tileRT != null && spawnAnchor != null)
             {
                 tileRT.SetParent(layer, worldPositionStays: true);
-                tileRT.position = heroRT.position;
+                tileRT.position = spawnAnchor.position;
                 tileRT.localScale = Vector3.zero;
                 StartCoroutine(AnimateTileSpawnToCell(tile, targetCell, 0.2f));
                 spawned = true;
@@ -398,33 +461,13 @@ namespace MergeDungeon.Core
         public void OnEndDrag(PointerEventData eventData)
         {
             if (_cg != null) _cg.blocksRaycasts = true;
-
-            var go = eventData.pointerCurrentRaycast.gameObject;
-            var cell = go != null ? go.GetComponentInParent<BoardCell>() : null;
-            if (cell != null && services != null && services.Grid != null && services.Grid.TryPlaceHeroInCell(this, cell))
-            {
-                var selMgr = UISelectionManager.Instance;
-                if (selMgr != null) selMgr.HandleClick(gameObject);
-                _dragging = false;
-                return;
-            }
-
-            // revert
             _dragging = false;
-            if (currentCell != null)
-            {
-                var rt = GetComponent<RectTransform>();
-                rt.SetParent(currentCell.rectTransform, worldPositionStays: false);
-                rt.anchoredPosition = Vector2.zero;
-            }
-            else
-            {
-                transform.SetParent(_originalParent, true);
-            }
+            ReturnToBenchSlot();
         }
 
         private void OnDestroy()
         {
+            _bench?.ReleaseHero(this);
             if (UISelectionManager.Instance != null && UISelectionManager.Instance.CurrentSelectedGO == gameObject)
             {
                 UISelectionManager.Instance.ClearSelection();
@@ -443,3 +486,10 @@ namespace MergeDungeon.Core
         }
     }
 }
+
+
+
+
+
+
+

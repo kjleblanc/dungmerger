@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MergeDungeon.Core
@@ -36,15 +36,31 @@ namespace MergeDungeon.Core
         {
             var grid = services != null ? services.Grid : null;
             if (grid == null) return;
+
             List<EnemyController> enemies = grid.GetEnemiesSnapshot();
             if (enemies == null || enemies.Count == 0) return;
-            enemies.Sort((a, b) => (b?.currentCell?.y ?? 0).CompareTo(a?.currentCell?.y ?? 0));
+
+            var bench = services != null ? services.EnemyBench : (grid.enemyBench != null ? grid.enemyBench : null);
+            if (bench != null)
+            {
+                enemies.Sort((a, b) => ResolveSlotIndex(a).CompareTo(ResolveSlotIndex(b)));
+            }
+
             for (int i = 0; i < enemies.Count; i++)
             {
-                var e = enemies[i];
-                if (e == null) continue;
-                var mover = e.GetComponent<EnemyUnitMover>();
-                mover?.TryStepDown();
+                var enemy = enemies[i];
+                if (enemy == null) continue;
+                enemy.ExecuteTurn();
+            }
+
+            int ResolveSlotIndex(EnemyController enemy)
+            {
+                if (enemy == null) return int.MaxValue;
+                if (enemy.TryGetBenchSlot(out var meta))
+                {
+                    return meta.index;
+                }
+                return int.MaxValue;
             }
         }
     }

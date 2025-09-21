@@ -17,10 +17,8 @@ namespace MergeDungeon.Core
         public int maxHp = 1;
         public int hp = 1;
         public bool isBoss = false;
-        [Tooltip("If true and sharing a cell with a hero, this unit will attack instead of moving on enemy advance.")]
+        [Tooltip("If true and sharing a slot associated with a hero, this unit will attack instead of moving on enemy advance.")]
         public bool engagedWithHero = false;
-
-        [HideInInspector] public BoardCell currentCell;
 
         [Header("Visuals")]
         public Image bg;
@@ -28,10 +26,12 @@ namespace MergeDungeon.Core
         public Image healthFill;
         public EnemyVisual enemyVisual;
 
-        private EnemyMovementBehaviour _movementBehaviour;
-        private EnemyAttackBehaviour _attackBehaviour;
+        private EnemyTurnBehaviour _turnBehaviour;
         private EnemyDefinition _cachedDefinition;
-        private bool _behavioursInitialized;
+        private bool _behaviourInitialized;
+
+        private EnemyBenchController _bench;
+        private int _benchSlotIndex = -1;
 
         private void Awake()
         {
@@ -57,6 +57,7 @@ namespace MergeDungeon.Core
         {
             definition = newDefinition;
             isBoss = bossFlag;
+            ClearBenchSlotBinding();
             ApplyDefinitionData(resetStats: false);
             ApplyVisualOverrides();
             InitializeStats(baseHp);
@@ -66,10 +67,9 @@ namespace MergeDungeon.Core
         {
             if (definition == null)
             {
-                _movementBehaviour = null;
-                _attackBehaviour = null;
+                _turnBehaviour = null;
                 _cachedDefinition = null;
-                _behavioursInitialized = false;
+                _behaviourInitialized = false;
                 if (resetStats)
                 {
                     InitializeStats(maxHp);
@@ -80,16 +80,14 @@ namespace MergeDungeon.Core
             if (_cachedDefinition != definition)
             {
                 _cachedDefinition = definition;
-                _behavioursInitialized = false;
+                _behaviourInitialized = false;
             }
 
-            _movementBehaviour = definition.movement;
-            _attackBehaviour = definition.attack;
-            if (!_behavioursInitialized)
+            _turnBehaviour = definition.turnBehaviour;
+            if (!_behaviourInitialized)
             {
-                _movementBehaviour?.Initialize(this);
-                _attackBehaviour?.Initialize(this);
-                _behavioursInitialized = true;
+                _turnBehaviour?.Initialize(this);
+                _behaviourInitialized = true;
             }
 
             if (resetStats)
@@ -185,16 +183,6 @@ namespace MergeDungeon.Core
         public void TryAttackHero(HeroController hero)
         {
             if (hero == null) return;
-
-            if (_attackBehaviour != null)
-            {
-                if (_attackBehaviour.CanAttack(this, hero))
-                {
-                    _attackBehaviour.PerformAttack(this, hero);
-                }
-                return;
-            }
-
             var damage = Mathf.Max(1, definition != null ? definition.baseDamage : 1);
             AttackHero(hero, damage);
         }
@@ -214,16 +202,18 @@ namespace MergeDungeon.Core
         public void DieWithLoot()
         {
             if (enemyVisual != null) enemyVisual.PlayDeath();
-            if (currentCell != null)
-            {
-                currentCell.ClearEnemyIf(this);
-            }
             services?.Enemies?.OnEnemyDied(this);
             Destroy(gameObject);
         }
 
         private void OnDestroy()
         {
+            if (_bench != null)
+            {
+                _bench.ReleaseEnemy(this);
+                ClearBenchSlotBinding();
+            }
+
             if (UISelectionManager.Instance != null && UISelectionManager.Instance.CurrentSelectedGO == gameObject)
             {
                 UISelectionManager.Instance.ClearSelection();
@@ -238,11 +228,44 @@ namespace MergeDungeon.Core
         public void OnSelectTap() { }
         public void OnActivateTap() { }
 
-        public bool TryExecuteMovementBehaviour()
+        internal void AssignBenchSlot(EnemyBenchController bench, int slotIndex)
         {
-            if (_movementBehaviour == null) return false;
-            _movementBehaviour.Tick(this);
-            return true;
+            _bench = bench;
+            _benchSlotIndex = slotIndex;
+        }
+
+        internal void ClearBenchSlotBinding()
+        {
+            _bench = null;
+            _benchSlotIndex = -1;
+        }
+
+        public bool TryGetBenchSlot(out EnemyBenchController.SlotMetadata metadata)
+        {
+            metadata = default;
+            return _bench != null && _benchSlotIndex >= 0 && _bench.TryGetSlotMetadata(_benchSlotIndex, out metadata);
+        }
+
+        public void ExecuteTurn()
+        {
+            if (_turnBehaviour == null)
+            {
+                return;
+            }
+
+            var servicesContext = services;
+            var grid = servicesContext != null ? servicesContext.Grid : null;
+            var board = servicesContext != null ? servicesContext.Board : null;
+            var enemyBench = servicesContext != null && servicesContext.EnemyBench != null ? servicesContext.EnemyBench : _bench;
+            var heroBench = servicesContext != null ? servicesContext.HeroBench : null;
+            EnemyBenchController.SlotMetadata? slot = null;
+            if (TryGetBenchSlot(out var slotMeta))
+            {
+                slot = slotMeta;
+            }
+
+            var context = new EnemyTurnContext(servicesContext, grid, board, enemyBench, heroBench, slot);
+            _turnBehaviour.ExecuteTurn(this, context);
         }
     }
 }

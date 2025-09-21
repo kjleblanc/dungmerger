@@ -111,8 +111,7 @@ namespace MergeDungeon.Core
         public AnimationCurve hpScaling = AnimationCurve.Linear(0f, 1f, 10f, 1f);
 
         [Header("Behaviours")]
-        public EnemyMovementBehaviour movement;
-        public EnemyAttackBehaviour attack;
+        public EnemyTurnBehaviour turnBehaviour;
 
         [Header("Board Link")]
         public TileDefinition enemyTile;
@@ -129,6 +128,7 @@ namespace MergeDungeon.Core
         public LootContainerDefinition LootContainer => lootModule != null ? lootModule.lootContainer : null;
         public LootTable DirectLootTable => lootModule != null ? lootModule.directLootTable : null;
         public EnemySpawnProfile SpawnProfile => spawnProfile;
+        public EnemyTurnBehaviour TurnBehaviour => turnBehaviour;
 
         public int GetScaledHp(int floor)
         {

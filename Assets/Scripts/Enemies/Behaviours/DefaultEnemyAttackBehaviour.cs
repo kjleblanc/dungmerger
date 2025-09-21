@@ -2,21 +2,20 @@ using UnityEngine;
 
 namespace MergeDungeon.Core
 {
-    [CreateAssetMenu(menuName = "MergeDungeon/Enemies/Attack/Default Melee", fileName = "EnemyAttack_Default")]
-    public class DefaultEnemyAttackBehaviour : EnemyAttackBehaviour
+    [CreateAssetMenu(menuName = "MergeDungeon/Enemies/Turn/Default Attack", fileName = "EnemyTurn_DefaultAttack")]
+    public class DefaultEnemyAttackBehaviour : DefaultEnemyMovementBehaviour
     {
-        [Min(1)] public int overrideDamage = 0;
+        [Tooltip("Overrides the damage dealt when greater than zero. Otherwise base damage from the definition is used.")]
+        [Min(0)] public int overrideDamage = 0;
 
-        public override bool CanAttack(EnemyController controller, HeroController hero)
+        protected override int ResolveDamage(EnemyController controller)
         {
-            return controller != null && hero != null;
-        }
+            if (overrideDamage > 0)
+            {
+                return overrideDamage;
+            }
 
-        public override void PerformAttack(EnemyController controller, HeroController hero)
-        {
-            if (controller == null || hero == null) return;
-            int damage = overrideDamage > 0 ? overrideDamage : Mathf.Max(1, controller.Definition != null ? controller.Definition.baseDamage : 1);
-            controller.AttackHero(hero, damage);
+            return base.ResolveDamage(controller);
         }
     }
 }

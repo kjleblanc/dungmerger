@@ -326,7 +326,6 @@ MonoBehaviour:
   maxHp: 3
   hp: 3
   isDowned: 0
-  currentCell: {fileID: 0}
   bg: {fileID: 0}
   label: {fileID: 205348480883438252}
   portrait: {fileID: 7586887075823701308}
@@ -421,3 +420,4 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+

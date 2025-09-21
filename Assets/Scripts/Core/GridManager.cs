@@ -17,7 +17,6 @@ namespace MergeDungeon.Core
         public event System.Action<EnemyController> EnemyDied;
         [Header("Events")]
         public VoidEventChannelSO advanceTick;
-
         [Header("Board Size (moved to BoardController)")]
         public int Width => _board != null ? _board.width : 0;
         public int Height => _board != null ? _board.height : 0;
@@ -25,9 +24,10 @@ namespace MergeDungeon.Core
         public bool ArePlayerActionsLocked => _enemyTurnActive || _pendingHeroSpawns > 0;
 
         [Header("UI Refs")]
+        public HeroBenchController heroBench; // optional, auto-add
+        public EnemyBenchController enemyBench; // optional, auto-add
         [Header("Modules")]
         public DragLayerController dragLayerController; // optional, auto-add
-
         [Header("Prefabs")]
         public TileBase tilePrefab; // generic tile
         public EnemyController enemyPrefab; // generic enemy
@@ -38,36 +38,33 @@ namespace MergeDungeon.Core
         public bool restrictHeroesToBottomRow = true;
 
 // Layout moved to BoardController
-
         // Delegated controllers
         public BoardController boardController; // optional external reference
         public EnemySpawner enemySpawner; // optional external reference
         public TileService tileService; // optional external reference
+
         private BoardController _board;
         private EnemySpawner _enemySpawner;
         private TileService _tileService;
+        private HeroBenchController _heroBench;
+        private EnemyBenchController _enemyBench;
         private GameplayServicesContext _servicesContext;
         public int ActiveEnemyCount => _enemySpawner != null ? _enemySpawner.ActiveEnemyCount : 0;
         public bool IsBoardReady => _board != null && _board.IsBoardReady;
-
         [Header("Selection")]
         public TileBase SelectedTile { get; private set; }
         private Vector2 _lastBoardSize;
-
         [Header("Data Assets")]
         public TileDatabase tileDatabase;
-
         [Header("Heroes")]
         public List<HeroDefinition> heroDefinitions = new List<HeroDefinition>();
         public HeroDefinition startingHeroDefinition;
-
         [Header("Combat Data")]
         public EnemyDefinitionDatabase enemyDefinitionDatabase;
         public VfxManager vfxManager; // optional, auto-add
         [Header("Visuals")]
         public EnemyVisualLibrary enemyVisualLibrary;
         public HeroVisualLibrary heroVisualLibrary;
-
         [Header("Progression")]
         public AdvanceMeterController advanceMeterController;
         public event System.Action EnemyAdvanced;
@@ -80,10 +77,10 @@ namespace MergeDungeon.Core
         private bool _enemyTurnActive;
         private int _pendingHeroSpawns;
         private Coroutine _enemyAdvanceRoutine;
+
         [Header("Drag Layer Sorting")]
         [HideInInspector] public bool forceDragAbove = true; // moved to DragLayerController
         [HideInInspector] public int dragSortingOrder = 4500; // moved to DragLayerController
-
         private void Awake()
         {
             CacheServices();
@@ -110,20 +107,16 @@ namespace MergeDungeon.Core
                 PublishServices();
                 return;
             }
-
             // Initialize drag/fx modules
             _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
             if (_drag == null) _drag = gameObject.AddComponent<DragLayerController>();
             _drag.Setup();
-
             _vfx = vfxManager != null ? vfxManager : GetComponent<VfxManager>();
             if (_vfx == null) _vfx = gameObject.AddComponent<VfxManager>();
             if (_vfx.dragLayerController == null) _vfx.dragLayerController = _drag;
             _vfx.Setup();
-
             _board = boardController != null ? boardController : GetComponent<BoardController>();
             if (_board == null) _board = gameObject.AddComponent<BoardController>();
-
             if (_advanceMeter == null)
             {
                 if (advanceMeterController != null)
@@ -141,24 +134,17 @@ namespace MergeDungeon.Core
                 advanceMeterController = _advanceMeter;
             }
             RefreshEnemyAdvanceUI();
-
             _enemySpawner = enemySpawner != null ? enemySpawner : GetComponent<EnemySpawner>();
             if (_enemySpawner == null) _enemySpawner = gameObject.AddComponent<EnemySpawner>();
             if (_enemySpawner != null) _enemySpawner.InitializeFrom(this);
-
             _tileService = tileService != null ? tileService : GetComponent<TileService>();
             if (_tileService == null) _tileService = gameObject.AddComponent<TileService>();
-
             if (tileFactory == null) tileFactory = GetComponent<TileFactory>();
             if (tileFactory == null) tileFactory = gameObject.AddComponent<TileFactory>();
-
             PublishServices();
             PropagateServicesChannel();
-
             PlaceStartingHeroes();
         }
-
-
         public void ToggleSelectTile(TileBase tile)
         {
             if (tile == null)
@@ -175,7 +161,6 @@ namespace MergeDungeon.Core
                 SetSelectedTile(tile);
             }
         }
-
         public void SetSelectedTile(TileBase tile)
         {
             // Centralize selection visuals in UISelectionManager
@@ -187,15 +172,12 @@ namespace MergeDungeon.Core
                 else selMgr.HandleClick(tile.gameObject);
             }
         }
-
         public void ClearSelection()
         {
             SelectedTile = null;
             UISelectionManager.Instance?.ClearSelection();
         }
-
         // Wrapper spawns delegating to EnemySpawner
-
         private void BuildBoard()
         {
             if (_board == null)
@@ -205,44 +187,35 @@ namespace MergeDungeon.Core
             }
             _board.BuildBoard();
         }
-
         public void RegisterHeroUse()
         {
             if (_advanceMeter == null) return;
             if (_enemyTurnActive) return;
-
             _advanceMeter.Increment();
             _advanceMeter.RefreshUI();
-
             if (!_advanceMeter.IsFull()) return;
-
             _advanceMeter.ResetMeter();
             _advanceMeter.RefreshUI();
             BeginEnemyTurn();
             EnsureEnemyAdvanceRoutine();
         }
-
         public void NotifyHeroSpawnStarted()
         {
             _pendingHeroSpawns++;
         }
-
         public void NotifyHeroSpawnFinished()
         {
             _pendingHeroSpawns = Mathf.Max(0, _pendingHeroSpawns - 1);
         }
-
         private void BeginEnemyTurn()
         {
             if (_enemyTurnActive) return;
             _enemyTurnActive = true;
         }
-
         private void EndEnemyTurn()
         {
             _enemyTurnActive = false;
         }
-
         private void EnsureEnemyAdvanceRoutine()
         {
             if (_enemyAdvanceRoutine == null)
@@ -250,57 +223,71 @@ namespace MergeDungeon.Core
                 _enemyAdvanceRoutine = StartCoroutine(RunEnemyAdvanceAfterPendingActions());
             }
         }
-
         private IEnumerator RunEnemyAdvanceAfterPendingActions()
         {
             while (_pendingHeroSpawns > 0)
             {
                 yield return null;
             }
-
             yield return null;
-
             advanceTick?.Raise();
             EnemyAdvanced?.Invoke();
             _advanceMeter?.RefreshUI();
             EndEnemyTurn();
             _enemyAdvanceRoutine = null;
         }
-
         private void RefreshEnemyAdvanceUI()
         {
             if (_advanceMeter != null) _advanceMeter.RefreshUI();
         }
-
         public System.Collections.Generic.List<EnemyController> GetEnemiesSnapshot()
         {
             return _enemySpawner != null ? _enemySpawner.GetEnemiesSnapshot() : new System.Collections.Generic.List<EnemyController>();
         }
-
         private void LateUpdate()
         {
             if (_board != null) _board.RecomputeGridCellSize();
         }
-
         private void RecomputeGridCellSize(bool force = false)
         {
             if (_board != null) _board.RecomputeGridCellSize(force);
         }
-
         private void PlaceStartingHeroes()
         {
             if (heroPrefab == null) return;
-
-            HeroDefinition definition = startingHeroDefinition;
-            if (definition == null && heroDefinitions != null && heroDefinitions.Count > 0)
+            CacheServices();
+            var definitions = BuildStartingHeroDefinitions();
+            if (definitions.Count == 0) return;
+            if (_heroBench != null)
             {
-                definition = heroDefinitions[0];
+                foreach (var definition in definitions)
+                {
+                    if (definition == null) continue;
+                    var hero = Instantiate(heroPrefab);
+                    hero.SetDefinition(definition, resetStats: true);
+                    hero.RefreshVisual();
+                    int slotIndex;
+                    if (!_heroBench.TryPlaceHero(hero, out slotIndex))
+                    {
+                        hero.transform.SetParent(_heroBench.BenchRoot, worldPositionStays: false);
+                    }
+                    hero.AssignBenchSlot(_heroBench, slotIndex);
+                }
+                PropagateServicesChannel();
+                return;
             }
-            if (definition == null) return;
-
-            var hero = Instantiate(heroPrefab);
-            hero.SetDefinition(definition, resetStats: true);
-
+            foreach (var definition in definitions)
+            {
+                if (definition == null) continue;
+                var fallbackHero = Instantiate(heroPrefab);
+                fallbackHero.SetDefinition(definition, resetStats: true);
+                PlaceHeroOnBoardFallback(fallbackHero);
+            }
+            PropagateServicesChannel();
+        }
+        private void PlaceHeroOnBoardFallback(HeroController hero)
+        {
+            if (hero == null) return;
             int startX = Mathf.Clamp(1, 0, Mathf.Max(0, Width - 1));
             var cell = GetCell(startX, heroesBottomRow);
             if (cell == null) cell = GetCell(0, heroesBottomRow);
@@ -309,28 +296,38 @@ namespace MergeDungeon.Core
                 cell.SetHero(hero);
             }
             hero.RefreshVisual();
-            PropagateServicesChannel();
         }
-
+        private List<HeroDefinition> BuildStartingHeroDefinitions()
+        {
+            var defs = new List<HeroDefinition>();
+            if (startingHeroDefinition != null) defs.Add(startingHeroDefinition);
+            if (heroDefinitions != null)
+            {
+                foreach (var def in heroDefinitions)
+                {
+                    if (def != null && !defs.Contains(def))
+                    {
+                        defs.Add(def);
+                    }
+                }
+            }
+            return defs;
+        }
         // Event raisers for module components
         public void RaiseEnemySpawned(EnemyController e) { EnemySpawned?.Invoke(e); }
         public void RaiseEnemyDied(EnemyController e) { EnemyDied?.Invoke(e); }
-
         public EnemyController TrySpawnEnemyTopRowsOfDefinition(EnemyDefinition definition, int baseHp, bool isBoss = false)
         {
             return _enemySpawner != null ? _enemySpawner.TrySpawnEnemyTopRowsOfDefinition(definition, baseHp, isBoss) : null;
         }
-
         public EnemyController TrySpawnEnemyAtCell(EnemyDefinition definition, int baseHp, bool isBoss, BoardCell cell, bool allowFallback = false)
         {
             return _enemySpawner != null ? _enemySpawner.TrySpawnEnemyAtCell(definition, baseHp, isBoss, cell, allowFallback) : null;
         }
-
         public BoardCell GetCell(int x, int y)
         {
             return _board != null ? _board.GetCell(x, y) : null;
         }
-
         public bool TryPlaceTileInCell(TileBase tile, BoardCell cell)
         {
             if (ArePlayerActionsLocked) return false;
@@ -344,7 +341,6 @@ namespace MergeDungeon.Core
             cell.SetTile(tile);
             return true;
         }
-
         // New: Merge trigger when a tile is dropped onto another tile of the same kind.
         // Implements 3/5 rule: 3-of-a-kind -> 1 upgraded; 5-of-a-kind -> 2 upgraded.
         public bool TryMergeOnDrop(TileBase source, TileBase target)
@@ -353,29 +349,25 @@ namespace MergeDungeon.Core
             if (_tileService != null) return _tileService.TryMergeOnDrop(source, target);
             return false;
         }
-
         public bool TryPlaceHeroInCell(HeroController hero, BoardCell cell)
         {
             if (ArePlayerActionsLocked) return false;
             if (hero == null || cell == null) return false;
             if (!cell.IsEmpty()) return false;
             if (restrictHeroesToBottomRow && cell.y != heroesBottomRow) return false;
-
-            if (hero.currentCell != null)
+            if (_heroBench != null)
             {
-                hero.currentCell.ClearHeroIf(hero);
+                _heroBench.ReleaseHero(hero);
             }
             cell.SetHero(hero);
             return true;
         }
-
         public bool TryFeedHero(TileBase tile, HeroController hero)
         {
             if (ArePlayerActionsLocked) return false;
             if (hero == null) return false;
             var feedModule = tile != null ? tile.def?.FeedModule : null;
             if (feedModule == null) return false;
-
             int value = Mathf.Max(0, feedModule.feedValue);
             if (feedModule.feedTarget == TileDefinition.FeedTarget.Stamina)
             {
@@ -387,21 +379,17 @@ namespace MergeDungeon.Core
             }
             return true;
         }
-
         public bool TryUseAbilityOnEnemy(TileBase tile, EnemyController enemy)
         {
             if (ArePlayerActionsLocked) return false;
             if (enemy == null) return false;
-
             var abilityModule = tile != null ? tile.def?.AbilityModule : null;
             if (abilityModule == null || !abilityModule.canAttack)
             {
                 return false;
             }
-
             int damage = Mathf.Max(0, abilityModule.damage);
             var area = abilityModule.area;
-
             if (area == AbilityArea.SingleTarget)
             {
                 enemy.ApplyHit(damage);
@@ -414,29 +402,43 @@ namespace MergeDungeon.Core
             }
             else // CrossPlus area
             {
-                ApplyAreaDamage(enemy.currentCell, damage);
+                ApplyAreaDamage(enemy, damage);
                 return true;
             }
         }
-
-        private void ApplyAreaDamage(BoardCell center, int damage)
+        private void ApplyAreaDamage(EnemyController centerEnemy, int damage)
         {
-            if (center == null) return;
-            // Target + 4-neighbors
-            var cells = new List<BoardCell> { center };
-            cells.Add(GetCell(center.x + 1, center.y));
-            cells.Add(GetCell(center.x - 1, center.y));
-            cells.Add(GetCell(center.x, center.y + 1));
-            cells.Add(GetCell(center.x, center.y - 1));
-            foreach (var c in cells)
+            if (centerEnemy == null) return;
+
+            centerEnemy.ApplyHit(damage);
+
+            var bench = _enemyBench != null ? _enemyBench : enemyBench;
+            var spawner = _enemySpawner != null ? _enemySpawner : (_servicesContext != null ? _servicesContext.Enemies : null);
+            if (bench == null || spawner == null) return;
+            if (!centerEnemy.TryGetBenchSlot(out var centerSlot)) return;
+
+            int centerColumn = centerSlot.preferredBoardColumn;
+            int centerRowOffset = centerSlot.targetRowOffsetFromTop;
+
+            var snapshot = spawner.GetEnemiesSnapshot();
+            for (int i = 0; i < snapshot.Count; i++)
             {
-                if (c != null && c.enemy != null)
+                var other = snapshot[i];
+                if (other == null || other == centerEnemy) continue;
+                if (!other.TryGetBenchSlot(out var otherSlot)) continue;
+
+                bool hasColumnData = centerColumn >= 0 && otherSlot.preferredBoardColumn >= 0;
+                bool sharesColumn = hasColumnData && otherSlot.preferredBoardColumn == centerColumn;
+                bool adjacentColumn = hasColumnData && Mathf.Abs(otherSlot.preferredBoardColumn - centerColumn) == 1 && otherSlot.targetRowOffsetFromTop == centerRowOffset;
+                bool verticalNeighbor = sharesColumn && Mathf.Abs(otherSlot.targetRowOffsetFromTop - centerRowOffset) == 1;
+                bool slotNeighbor = Mathf.Abs(otherSlot.index - centerSlot.index) == 1;
+
+                if (adjacentColumn || verticalNeighbor || slotNeighbor)
                 {
-                    c.enemy.ApplyHit(damage);
+                    other.ApplyHit(damage);
                 }
             }
         }
-
         public void SpawnDamagePopup(RectTransform target, int amount, Color color)
         {
             if (_vfx != null)
@@ -452,27 +454,52 @@ namespace MergeDungeon.Core
                 }
             }
         }
-
         // Expose drag layer and damage color for existing code
         public Transform dragLayer => _drag != null ? _drag.dragLayer : null;
         public Color damageNumberColor => _vfx != null ? _vfx.damageNumberColor : new Color(1f, 0.3f, 0.3f, 1f);
-
-        
-
-        
-
+        public BoardCell FindSpawnCellForHero(HeroController hero)
+        {
+            if (_board == null || Width <= 0 || Height <= 0) return null;
+            int preferredColumn = Mathf.Clamp(Width / 2, 0, Mathf.Max(0, Width - 1));
+            if (_heroBench != null && hero != null)
+            {
+                preferredColumn = Mathf.Clamp(_heroBench.GetPreferredColumnForHero(hero), 0, Mathf.Max(0, Width - 1));
+            }
+            int targetRow = Mathf.Clamp(heroesBottomRow, 0, Mathf.Max(0, Height - 1));
+            if (restrictHeroesToBottomRow)
+            {
+                var bottomCell = GetCell(preferredColumn, targetRow);
+                if (bottomCell != null && bottomCell.IsEmpty())
+                {
+                    return bottomCell;
+                }
+                for (int offset = 1; offset < Width; offset++)
+                {
+                    var left = GetCell(preferredColumn - offset, targetRow);
+                    if (left != null && left.IsEmpty()) return left;
+                    var right = GetCell(preferredColumn + offset, targetRow);
+                    if (right != null && right.IsEmpty()) return right;
+                }
+            }
+            var origin = GetCell(preferredColumn, targetRow);
+            if (origin != null)
+            {
+                var nearest = FindNearestEmptyCell(origin);
+                if (nearest != null) return nearest;
+            }
+            var empties = CollectEmptyCells();
+            return empties.Count > 0 ? empties[0] : null;
+        }
         public List<BoardCell> CollectEmptyCells()
         {
             return _board != null ? _board.CollectEmptyCells() : new List<BoardCell>();
         }
-
         // Find the nearest empty cell to a given origin using Manhattan distance
         public BoardCell FindNearestEmptyCell(BoardCell origin)
         {
             if (origin == null || _board == null) return null;
             var empties = CollectEmptyCells();
             if (empties == null || empties.Count == 0) return null;
-
             BoardCell best = null;
             int bestDist = int.MaxValue;
             foreach (var c in empties)
@@ -486,11 +513,7 @@ namespace MergeDungeon.Core
             }
             return best;
         }
-
         // Merge logic and BFS helpers moved to TileService
-
-        
-
         public void OnEnemyDied(EnemyController enemy)
         {
             if (_enemySpawner != null)
@@ -498,16 +521,12 @@ namespace MergeDungeon.Core
                 _enemySpawner.OnEnemyDied(enemy);
             }
         }
-    
-        
-
         private void OnDisable()
         {
             if (servicesChannel != null && _servicesContext != null)
             {
                 servicesChannel.Unregister(_servicesContext);
             }
-
             if (_enemyAdvanceRoutine != null)
             {
                 StopCoroutine(_enemyAdvanceRoutine);
@@ -516,7 +535,6 @@ namespace MergeDungeon.Core
             _enemyTurnActive = false;
             _pendingHeroSpawns = 0;
         }
-
         private void CacheServices()
         {
             if (_board == null) _board = boardController != null ? boardController : GetComponent<BoardController>();
@@ -524,8 +542,35 @@ namespace MergeDungeon.Core
             if (_tileService == null) _tileService = tileService != null ? tileService : GetComponent<TileService>();
             if (_vfx == null) _vfx = vfxManager != null ? vfxManager : GetComponent<VfxManager>();
             if (_drag == null) _drag = dragLayerController != null ? dragLayerController : GetComponent<DragLayerController>();
+            if (_heroBench == null)
+            {
+                if (heroBench != null)
+                    _heroBench = heroBench;
+                else
+                {
+#if UNITY_2023_1_OR_NEWER
+                    _heroBench = FindFirstObjectByType<HeroBenchController>();
+#else
+                    _heroBench = FindObjectOfType<HeroBenchController>();
+#endif
+                }
+            }
+            if (_heroBench != null) heroBench = _heroBench;
+            if (_enemyBench == null)
+            {
+                if (enemyBench != null)
+                    _enemyBench = enemyBench;
+                else
+                {
+#if UNITY_2023_1_OR_NEWER
+                    _enemyBench = FindFirstObjectByType<EnemyBenchController>();
+#else
+                    _enemyBench = FindObjectOfType<EnemyBenchController>();
+#endif
+                }
+            }
+            if (_enemyBench != null) enemyBench = _enemyBench;
             if (tileFactory == null) tileFactory = GetComponent<TileFactory>();
-
             if (_advanceMeter == null)
             {
                 if (advanceMeterController != null)
@@ -545,11 +590,9 @@ namespace MergeDungeon.Core
             {
                 advanceMeterController = _advanceMeter;
             }
-
             if (_enemySpawner != null) _enemySpawner.InitializeFrom(this);
             if (_advanceMeter != null) _advanceMeter.InitializeFrom(this);
         }
-
         private void PublishServicesIfNeeded()
         {
             if (servicesChannel == null) return;
@@ -559,14 +602,12 @@ namespace MergeDungeon.Core
                 servicesChannel.Register(_servicesContext);
             }
         }
-
         private void PublishServices()
         {
             if (servicesChannel == null) return;
             _servicesContext = BuildServicesContext();
             servicesChannel.Register(_servicesContext);
         }
-
         private GameplayServicesContext BuildServicesContext()
         {
             IReadOnlyList<HeroDefinition> heroDefs = heroDefinitions != null ? (IReadOnlyList<HeroDefinition>)heroDefinitions : Array.Empty<HeroDefinition>();
@@ -577,6 +618,8 @@ namespace MergeDungeon.Core
                 _enemySpawner,
                 _vfx,
                 _drag,
+                _heroBench,
+                _enemyBench,
                 tileFactory,
                 tileDatabase,
                 enemyDefinitionDatabase,
@@ -587,7 +630,6 @@ namespace MergeDungeon.Core
                 _advanceMeter
             );
         }
-
         private void PropagateServicesChannel()
         {
             if (servicesChannel == null) return;
@@ -604,7 +646,5 @@ namespace MergeDungeon.Core
                 }
             }
         }
-
     }
 }
-

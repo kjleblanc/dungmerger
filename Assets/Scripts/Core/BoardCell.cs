@@ -64,7 +64,6 @@ namespace MergeDungeon.Core
             enemy = e;
             if (e != null)
             {
-                e.currentCell = this;
                 var rt = e.GetComponent<RectTransform>();
                 rt.SetParent(rectTransform, worldPositionStays: false);
                 rt.anchoredPosition = Vector2.zero;
@@ -84,7 +83,6 @@ namespace MergeDungeon.Core
             hero = h;
             if (h != null)
             {
-                h.currentCell = this;
                 var rt = h.GetComponent<RectTransform>();
                 rt.SetParent(rectTransform, worldPositionStays: false);
                 rt.anchoredPosition = Vector2.zero;
