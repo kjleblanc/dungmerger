@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using MergeDungeon.Core;
@@ -20,6 +21,8 @@ namespace MergeDungeon.Core
         [Header("Board Size (moved to BoardController)")]
         public int Width => _board != null ? _board.width : 0;
         public int Height => _board != null ? _board.height : 0;
+        public bool IsEnemyTurn => _enemyTurnActive;
+        public bool ArePlayerActionsLocked => _enemyTurnActive || _pendingHeroSpawns > 0;
 
         [Header("UI Refs")]
         [Header("Modules")]
@@ -74,6 +77,9 @@ namespace MergeDungeon.Core
         private AdvanceMeterController _advanceMeter;
         private VfxManager _vfx;
         private DragLayerController _drag;
+        private bool _enemyTurnActive;
+        private int _pendingHeroSpawns;
+        private Coroutine _enemyAdvanceRoutine;
         [Header("Drag Layer Sorting")]
         [HideInInspector] public bool forceDragAbove = true; // moved to DragLayerController
         [HideInInspector] public int dragSortingOrder = 4500; // moved to DragLayerController
@@ -203,15 +209,62 @@ namespace MergeDungeon.Core
         public void RegisterHeroUse()
         {
             if (_advanceMeter == null) return;
+            if (_enemyTurnActive) return;
+
             _advanceMeter.Increment();
             _advanceMeter.RefreshUI();
-            if (_advanceMeter.IsFull())
+
+            if (!_advanceMeter.IsFull()) return;
+
+            _advanceMeter.ResetMeter();
+            _advanceMeter.RefreshUI();
+            BeginEnemyTurn();
+            EnsureEnemyAdvanceRoutine();
+        }
+
+        public void NotifyHeroSpawnStarted()
+        {
+            _pendingHeroSpawns++;
+        }
+
+        public void NotifyHeroSpawnFinished()
+        {
+            _pendingHeroSpawns = Mathf.Max(0, _pendingHeroSpawns - 1);
+        }
+
+        private void BeginEnemyTurn()
+        {
+            if (_enemyTurnActive) return;
+            _enemyTurnActive = true;
+        }
+
+        private void EndEnemyTurn()
+        {
+            _enemyTurnActive = false;
+        }
+
+        private void EnsureEnemyAdvanceRoutine()
+        {
+            if (_enemyAdvanceRoutine == null)
             {
-                _advanceMeter.ResetMeter();
-                advanceTick?.Raise();
-                EnemyAdvanced?.Invoke();
-                _advanceMeter.RefreshUI();
+                _enemyAdvanceRoutine = StartCoroutine(RunEnemyAdvanceAfterPendingActions());
             }
+        }
+
+        private IEnumerator RunEnemyAdvanceAfterPendingActions()
+        {
+            while (_pendingHeroSpawns > 0)
+            {
+                yield return null;
+            }
+
+            yield return null;
+
+            advanceTick?.Raise();
+            EnemyAdvanced?.Invoke();
+            _advanceMeter?.RefreshUI();
+            EndEnemyTurn();
+            _enemyAdvanceRoutine = null;
         }
 
         private void RefreshEnemyAdvanceUI()
@@ -280,6 +333,7 @@ namespace MergeDungeon.Core
 
         public bool TryPlaceTileInCell(TileBase tile, BoardCell cell)
         {
+            if (ArePlayerActionsLocked) return false;
             if (_tileService != null) return _tileService.TryPlaceTileInCell(tile, cell);
             if (cell == null) return false;
             if (!cell.IsFreeForTile()) return false; // Only empty cells accept tiles
@@ -295,12 +349,14 @@ namespace MergeDungeon.Core
         // Implements 3/5 rule: 3-of-a-kind -> 1 upgraded; 5-of-a-kind -> 2 upgraded.
         public bool TryMergeOnDrop(TileBase source, TileBase target)
         {
+            if (ArePlayerActionsLocked) return false;
             if (_tileService != null) return _tileService.TryMergeOnDrop(source, target);
             return false;
         }
 
         public bool TryPlaceHeroInCell(HeroController hero, BoardCell cell)
         {
+            if (ArePlayerActionsLocked) return false;
             if (hero == null || cell == null) return false;
             if (!cell.IsEmpty()) return false;
             if (restrictHeroesToBottomRow && cell.y != heroesBottomRow) return false;
@@ -315,6 +371,7 @@ namespace MergeDungeon.Core
 
         public bool TryFeedHero(TileBase tile, HeroController hero)
         {
+            if (ArePlayerActionsLocked) return false;
             if (hero == null) return false;
             var feedModule = tile != null ? tile.def?.FeedModule : null;
             if (feedModule == null) return false;
@@ -333,6 +390,7 @@ namespace MergeDungeon.Core
 
         public bool TryUseAbilityOnEnemy(TileBase tile, EnemyController enemy)
         {
+            if (ArePlayerActionsLocked) return false;
             if (enemy == null) return false;
 
             var abilityModule = tile != null ? tile.def?.AbilityModule : null;
@@ -449,6 +507,14 @@ namespace MergeDungeon.Core
             {
                 servicesChannel.Unregister(_servicesContext);
             }
+
+            if (_enemyAdvanceRoutine != null)
+            {
+                StopCoroutine(_enemyAdvanceRoutine);
+                _enemyAdvanceRoutine = null;
+            }
+            _enemyTurnActive = false;
+            _pendingHeroSpawns = 0;
         }
 
         private void CacheServices()

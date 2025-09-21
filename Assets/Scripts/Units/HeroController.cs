@@ -229,83 +229,102 @@ namespace MergeDungeon.Core
             if (stamina <= 0) return;
             if (Time.time - _lastSpawnTime < spawnCooldown) return;
 
+            var grid = services != null ? services.Grid : null;
+            if (grid != null && grid.ArePlayerActionsLocked) return;
+            if (services == null || services.TileFactory == null) return;
+
             var defToSpawn = GetSpawnDefinition();
-            if (defToSpawn != null && services != null && services.TileFactory != null)
+            if (defToSpawn == null) return;
+
+            var board = services.Board;
+            var targetCell = board != null ? board.FindNearestEmptyCell(currentCell) : null;
+            if (targetCell == null) return;
+
+            var tile = services.TileFactory.Create(defToSpawn);
+            if (tile == null) return;
+
+            bool spawned = false; // Gate hero use effects to successful spawns
+
+            var tileRT = tile.GetComponent<RectTransform>();
+            var heroRT = GetComponent<RectTransform>();
+            var layer = services.DragLayer != null ? services.DragLayer.dragLayer : transform.parent;
+
+            grid?.NotifyHeroSpawnStarted();
+
+            if (tileRT != null && heroRT != null)
             {
-                var board = services.Board;
-                var targetCell = board != null ? board.FindNearestEmptyCell(currentCell) : null;
-                if (targetCell != null)
-                {
-                    var tile = services.TileFactory.Create(defToSpawn);
-                    if (tile != null)
-                    {
-                        // Temporarily parent under drag layer and position at hero center
-                        var tileRT = tile.GetComponent<RectTransform>();
-                        var heroRT = GetComponent<RectTransform>();
-                        var layer = services.DragLayer != null ? services.DragLayer.dragLayer : transform.parent;
-                        if (tileRT != null && heroRT != null)
-                        {
-                            tileRT.SetParent(layer, worldPositionStays: true);
-                            tileRT.position = heroRT.position;
-                            tileRT.localScale = Vector3.zero;
-                            StartCoroutine(AnimateTileSpawnToCell(tile, targetCell, 0.2f));
-                            _lastSpawnTime = Time.time;
-                        }
-                        else
-                        {
-                            // Fallback: place immediately if RectTransforms missing
-                            targetCell.SetTile(tile);
-                            _lastSpawnTime = Time.time;
-                        }
-                    }
-                }
+                tileRT.SetParent(layer, worldPositionStays: true);
+                tileRT.position = heroRT.position;
+                tileRT.localScale = Vector3.zero;
+                StartCoroutine(AnimateTileSpawnToCell(tile, targetCell, 0.2f));
+                spawned = true;
             }
-            // Play visual use animation if available
+            else
+            {
+                targetCell.SetTile(tile);
+                spawned = true;
+                grid?.NotifyHeroSpawnFinished();
+            }
+
+            if (!spawned)
+            {
+                grid?.NotifyHeroSpawnFinished();
+                return;
+            }
+
+            _lastSpawnTime = Time.time;
+
             if (heroVisual != null)
             {
                 heroVisual.PlayUse();
             }
-            // Increment enemy advance meter
-            if (services != null && services.Grid != null)
-            {
-                services.Grid.RegisterHeroUse();
-            }
+
+            grid?.RegisterHeroUse();
+
             stamina -= 1;
             RefreshUI();
         }
 
         private IEnumerator AnimateTileSpawnToCell(TileBase tile, BoardCell targetCell, float duration)
         {
-            if (tile == null || targetCell == null) yield break;
-
-            var tileRT = tile.GetComponent<RectTransform>();
-            var targetRT = targetCell.rectTransform;
-            if (tileRT == null || targetRT == null)
+            var grid = services != null ? services.Grid : null;
+            try
             {
-                targetCell.SetTile(tile);
-                yield break;
+                if (tile == null || targetCell == null) yield break;
+
+                var tileRT = tile.GetComponent<RectTransform>();
+                var targetRT = targetCell.rectTransform;
+                if (tileRT == null || targetRT == null)
+                {
+                    targetCell.SetTile(tile);
+                    yield break;
+                }
+
+                Vector3 startPos = tileRT.position;
+                Vector3 endPos = targetRT.position;
+                Vector3 startScale = Vector3.zero;
+                Vector3 endScale = Vector3.one;
+                float t = 0f;
+                duration = Mathf.Max(0.0001f, duration);
+
+                while (t < 1f && tile != null)
+                {
+                    t += Time.deltaTime / duration;
+                    float e = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t));
+                    tileRT.position = Vector3.LerpUnclamped(startPos, endPos, e);
+                    tileRT.localScale = Vector3.LerpUnclamped(startScale, endScale, e);
+                    yield return null;
+                }
+
+                if (tile != null)
+                {
+                    // Finalize placement
+                    targetCell.SetTile(tile);
+                }
             }
-
-            Vector3 startPos = tileRT.position;
-            Vector3 endPos = targetRT.position;
-            Vector3 startScale = Vector3.zero;
-            Vector3 endScale = Vector3.one;
-            float t = 0f;
-            duration = Mathf.Max(0.0001f, duration);
-
-            while (t < 1f && tile != null)
+            finally
             {
-                t += Time.deltaTime / duration;
-                float e = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t));
-                tileRT.position = Vector3.LerpUnclamped(startPos, endPos, e);
-                tileRT.localScale = Vector3.LerpUnclamped(startScale, endScale, e);
-                yield return null;
-            }
-
-            if (tile != null)
-            {
-                // Finalize placement
-                targetCell.SetTile(tile);
+                grid?.NotifyHeroSpawnFinished();
             }
         }
 
@@ -313,6 +332,7 @@ namespace MergeDungeon.Core
         public void OnActivateTap()
         {
             if (isDowned) return;
+            if (services != null && services.Grid != null && services.Grid.ArePlayerActionsLocked) return;
             TrySpawnAbility();
         }
 
@@ -332,6 +352,8 @@ namespace MergeDungeon.Core
         }
         public void OnBeginDrag(PointerEventData eventData)
         {
+            if (services != null && services.Grid != null && services.Grid.ArePlayerActionsLocked) return;
+
             _dragging = true;
             // Clear current selection before reparenting so the old cell highlight can be found and cleared
             var selMgr = UISelectionManager.Instance;

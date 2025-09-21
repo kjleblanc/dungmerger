@@ -19,11 +19,11 @@ MonoBehaviour:
     hpOverride: 0
     hpBonusPerFloor: 0
     bossFlagForAll: 0
-    spawnLayout: {fileID: 0}
+    spawnLayout: {fileID: 4577828627448606345}
     layoutAnchor: {x: 0, y: 0}
     fillRemainderWithRandom: 0
-  initialSpawn: 1
-  perAdvanceSpawn: 1
+  initialSpawn: 5
+  perAdvanceSpawn: 0
 --- !u!114 &4577828627448606345
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -37,4 +37,8 @@ MonoBehaviour:
   m_Name: SO_EnemyWaveFloor1_SpawnLayout_1
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemySpawnLayoutModule
   relativeCells:
-  - {x: 0, y: 0}
+  - {x: 0, y: 2}
+  - {x: 1, y: 2}
+  - {x: 2, y: 2}
+  - {x: 3, y: 2}
+  - {x: 4, y: 2}

@@ -77,6 +77,9 @@ namespace MergeDungeon.Core
 
         public void OnBeginDrag(PointerEventData eventData)
         {
+            var grid = services != null ? services.Grid : null;
+            if (grid != null && grid.ArePlayerActionsLocked) return;
+
             _dragging = true;
             // Deselect on drag start
             var mgr = UISelectionManager.Instance;
@@ -119,6 +122,13 @@ namespace MergeDungeon.Core
         {
             _dragging = false;
             _cg.blocksRaycasts = true;
+
+            var grid = services != null ? services.Grid : null;
+            if (grid != null && grid.ArePlayerActionsLocked)
+            {
+                ReturnToCell();
+                return;
+            }
 
             var go = eventData.pointerCurrentRaycast.gameObject;
             if (go == null)

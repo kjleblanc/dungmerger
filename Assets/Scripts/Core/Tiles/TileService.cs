@@ -67,6 +67,8 @@ namespace MergeDungeon.Core
 
         public bool TryPlaceTileInCell(TileBase tile, BoardCell cell)
         {
+            var gridManager = services != null ? services.Grid : grid;
+            if (gridManager != null && gridManager.ArePlayerActionsLocked) return false;
             if (cell == null) return false;
             if (!cell.IsFreeForTile()) return false;
             if (tile.currentCell != null)
@@ -81,6 +83,8 @@ namespace MergeDungeon.Core
 
         public bool TryMergeOnDrop(TileBase source, TileBase target)
         {
+            var gridManager = services != null ? services.Grid : grid;
+            if (gridManager != null && gridManager.ArePlayerActionsLocked) return false;
             if (services == null && grid == null) return false;
             if (source == null || target == null) return false;
             if (target.currentCell == null) return false;
