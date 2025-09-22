@@ -59,7 +59,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.4339623, g: 0.4339623, b: 0.4339623, a: 1}
+  m_Color: {r: 0.4339623, g: 0.4339623, b: 0.4339623, a: 0.25490198}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -91,7 +91,5 @@ MonoBehaviour:
   x: 0
   y: 0
   tile: {fileID: 0}
-  enemy: {fileID: 0}
-  hero: {fileID: 0}
   rectTransform: {fileID: 2603201655547531721}
   bg: {fileID: 3360241783874266845}

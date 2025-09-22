@@ -1,11 +1,12 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace MergeDungeon.Core
+namespace MergeDungeon.Core.Editor
 {
     [CustomEditor(typeof(BoardPerspectiveLayout))]
     [CanEditMultipleObjects]
-    public class BoardPerspectiveLayoutEditor : Editor
+    public class BoardPerspectiveLayoutEditor : UnityEditor.Editor
+
     {
         private SerializedProperty _tiltProp;
         private SerializedProperty _rowDepthProp;
