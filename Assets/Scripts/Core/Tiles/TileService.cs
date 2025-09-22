@@ -281,8 +281,12 @@ namespace MergeDungeon.Core
             {
                 if (cell != null && cell.tile != null)
                 {
-                    Destroy(cell.tile.gameObject);
-                    cell.tile = null;
+                    var discarded = cell.tile;
+                    cell.ClearTileIf(discarded);
+                    if (discarded != null)
+                    {
+                        Destroy(discarded.gameObject);
+                    }
                 }
             }
 
@@ -318,8 +322,12 @@ namespace MergeDungeon.Core
             // Remove existing tile at origin, if any
             if (originCellDef != null && originCellDef.tile != null)
             {
-                Destroy(originCellDef.tile.gameObject);
-                originCellDef.tile = null;
+                var existing = originCellDef.tile;
+                originCellDef.ClearTileIf(existing);
+                if (existing != null)
+                {
+                    Destroy(existing.gameObject);
+                }
             }
             var outputDef = defRule.output;
             int defToProduce = Mathf.Max(1, defRule.outputCount);

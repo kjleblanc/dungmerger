@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.TileMergeModule
   threeOfAKind:
     countToConsume: 3
-    output: {fileID: 0}
+    output: {fileID: 11400000, guid: 1154fc05acfad4e46b1302497783d77d, type: 2}
     outputCount: 1
   fiveOfAKind:
     countToConsume: 5
-    output: {fileID: 0}
+    output: {fileID: 11400000, guid: 1154fc05acfad4e46b1302497783d77d, type: 2}
     outputCount: 2

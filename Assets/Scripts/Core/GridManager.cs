@@ -33,10 +33,6 @@ namespace MergeDungeon.Core
         public EnemyController enemyPrefab; // generic enemy
         public HeroController heroPrefab;   // generic hero
 
-        [Header("Gameplay")]
-        public int heroesBottomRow = 0;
-        public bool restrictHeroesToBottomRow = true;
-
 // Layout moved to BoardController
         // Delegated controllers
         public BoardController boardController; // optional external reference
@@ -258,44 +254,55 @@ namespace MergeDungeon.Core
             CacheServices();
             var definitions = BuildStartingHeroDefinitions();
             if (definitions.Count == 0) return;
-            if (_heroBench != null)
-            {
-                foreach (var definition in definitions)
-                {
-                    if (definition == null) continue;
-                    var hero = Instantiate(heroPrefab);
-                    hero.SetDefinition(definition, resetStats: true);
-                    hero.RefreshVisual();
-                    int slotIndex;
-                    if (!_heroBench.TryPlaceHero(hero, out slotIndex))
-                    {
-                        hero.transform.SetParent(_heroBench.BenchRoot, worldPositionStays: false);
-                    }
-                    hero.AssignBenchSlot(_heroBench, slotIndex);
-                }
-                PropagateServicesChannel();
-                return;
-            }
+
+            var bench = _heroBench != null ? _heroBench : heroBench;
             foreach (var definition in definitions)
             {
                 if (definition == null) continue;
-                var fallbackHero = Instantiate(heroPrefab);
-                fallbackHero.SetDefinition(definition, resetStats: true);
-                PlaceHeroOnBoardFallback(fallbackHero);
+                var hero = Instantiate(heroPrefab);
+                hero.SetDefinition(definition, resetStats: true);
+                hero.RefreshVisual();
+
+                int slotIndex = -1;
+                bool placedOnBench = bench != null && bench.TryPlaceHero(hero, out slotIndex);
+                if (placedOnBench)
+                {
+                    hero.AssignBenchSlot(bench, slotIndex);
+                }
+                else
+                {
+                    AttachHeroFallback(hero);
+                    hero.AssignBenchSlot(null, -1);
+                }
             }
+
             PropagateServicesChannel();
         }
-        private void PlaceHeroOnBoardFallback(HeroController hero)
+        private void AttachHeroFallback(HeroController hero)
         {
             if (hero == null) return;
-            int startX = Mathf.Clamp(1, 0, Mathf.Max(0, Width - 1));
-            var cell = GetCell(startX, heroesBottomRow);
-            if (cell == null) cell = GetCell(0, heroesBottomRow);
-            if (cell != null)
+
+            var rt = hero.GetComponent<RectTransform>();
+            if (rt == null) return;
+
+            Transform parent = transform;
+            if (_board != null && _board.boardContainer != null)
             {
-                cell.SetHero(hero);
+                parent = _board.boardContainer;
             }
-            hero.RefreshVisual();
+
+            rt.SetParent(parent, worldPositionStays: false);
+            if (parent is RectTransform)
+            {
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = Vector2.zero;
+            }
+            else
+            {
+                rt.localPosition = Vector3.zero;
+            }
+            rt.localScale = Vector3.one;
         }
         private List<HeroDefinition> BuildStartingHeroDefinitions()
         {
@@ -348,19 +355,6 @@ namespace MergeDungeon.Core
             if (ArePlayerActionsLocked) return false;
             if (_tileService != null) return _tileService.TryMergeOnDrop(source, target);
             return false;
-        }
-        public bool TryPlaceHeroInCell(HeroController hero, BoardCell cell)
-        {
-            if (ArePlayerActionsLocked) return false;
-            if (hero == null || cell == null) return false;
-            if (!cell.IsEmpty()) return false;
-            if (restrictHeroesToBottomRow && cell.y != heroesBottomRow) return false;
-            if (_heroBench != null)
-            {
-                _heroBench.ReleaseHero(hero);
-            }
-            cell.SetHero(hero);
-            return true;
         }
         public bool TryFeedHero(TileBase tile, HeroController hero)
         {
@@ -460,35 +454,53 @@ namespace MergeDungeon.Core
         public BoardCell FindSpawnCellForHero(HeroController hero)
         {
             if (_board == null || Width <= 0 || Height <= 0) return null;
+
             int preferredColumn = Mathf.Clamp(Width / 2, 0, Mathf.Max(0, Width - 1));
-            if (_heroBench != null && hero != null)
+            var bench = _heroBench != null ? _heroBench : heroBench;
+            if (bench != null && hero != null)
             {
-                preferredColumn = Mathf.Clamp(_heroBench.GetPreferredColumnForHero(hero), 0, Mathf.Max(0, Width - 1));
+                preferredColumn = Mathf.Clamp(bench.GetPreferredColumnForHero(hero), 0, Mathf.Max(0, Width - 1));
             }
-            int targetRow = Mathf.Clamp(heroesBottomRow, 0, Mathf.Max(0, Height - 1));
-            if (restrictHeroesToBottomRow)
+
+            var cell = FindFirstEmptyInColumn(preferredColumn);
+            if (cell != null) return cell;
+
+            for (int offset = 1; offset < Width; offset++)
             {
-                var bottomCell = GetCell(preferredColumn, targetRow);
-                if (bottomCell != null && bottomCell.IsEmpty())
+                int left = preferredColumn - offset;
+                if (left >= 0)
                 {
-                    return bottomCell;
+                    cell = FindFirstEmptyInColumn(left);
+                    if (cell != null) return cell;
                 }
-                for (int offset = 1; offset < Width; offset++)
+
+                int right = preferredColumn + offset;
+                if (right < Width)
                 {
-                    var left = GetCell(preferredColumn - offset, targetRow);
-                    if (left != null && left.IsEmpty()) return left;
-                    var right = GetCell(preferredColumn + offset, targetRow);
-                    if (right != null && right.IsEmpty()) return right;
+                    cell = FindFirstEmptyInColumn(right);
+                    if (cell != null) return cell;
                 }
             }
-            var origin = GetCell(preferredColumn, targetRow);
+
+            var origin = GetCell(preferredColumn, 0) ?? GetCell(preferredColumn, Mathf.Max(0, Height - 1));
             if (origin != null)
             {
                 var nearest = FindNearestEmptyCell(origin);
                 if (nearest != null) return nearest;
             }
+
             var empties = CollectEmptyCells();
             return empties.Count > 0 ? empties[0] : null;
+
+            BoardCell FindFirstEmptyInColumn(int column)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    var candidate = GetCell(column, y);
+                    if (candidate != null && candidate.IsEmpty()) return candidate;
+                }
+                return null;
+            }
         }
         public List<BoardCell> CollectEmptyCells()
         {

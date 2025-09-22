@@ -448,7 +448,7 @@ namespace MergeDungeon.Core
 
         private static bool CellAcceptsLoot(BoardCell cell)
         {
-            return cell != null && cell.tile == null && cell.hero == null && cell.enemy == null;
+            return cell != null && cell.tile == null;
         }
 
         public List<EnemyController> GetEnemiesSnapshot()

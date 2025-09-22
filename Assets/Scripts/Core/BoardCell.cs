@@ -10,8 +10,6 @@ namespace MergeDungeon.Core
 
         [Header("Occupants")]
         public TileBase tile; // current tile occupant
-        public EnemyController enemy; // current enemy occupant
-        public HeroController hero;   // current hero occupant
 
         [Header("Refs")]
         public RectTransform rectTransform;
@@ -31,69 +29,43 @@ namespace MergeDungeon.Core
 
         public bool IsEmpty()
         {
-            return tile == null && enemy == null && hero == null;
+            return tile == null;
         }
 
         public bool IsFreeForTile()
         {
-            return tile == null && enemy == null && hero == null;
+            return tile == null;
         }
 
-        public void SetTile(TileBase t)
+        public void SetTile(TileBase next)
         {
-            tile = t;
-            if (t != null)
+            if (tile != null && tile != next && tile.currentCell == this)
             {
-                t.currentCell = this;
-                var rt = t.GetComponent<RectTransform>();
-                rt.SetParent(rectTransform, worldPositionStays: false);
-                rt.anchoredPosition = Vector2.zero;
+                tile.currentCell = null;
+            }
+
+            tile = next;
+            if (next != null)
+            {
+                next.currentCell = this;
+                var rt = next.GetComponent<RectTransform>();
+                if (rt != null && rectTransform != null)
+                {
+                    rt.SetParent(rectTransform, worldPositionStays: false);
+                    rt.anchoredPosition = Vector2.zero;
+                }
             }
         }
 
-        public void ClearTileIf(TileBase t)
+        public void ClearTileIf(TileBase target)
         {
-            if (tile == t)
+            if (tile == target)
             {
+                if (target != null && target.currentCell == this)
+                {
+                    target.currentCell = null;
+                }
                 tile = null;
-            }
-        }
-
-        public void SetEnemy(EnemyController e)
-        {
-            enemy = e;
-            if (e != null)
-            {
-                var rt = e.GetComponent<RectTransform>();
-                rt.SetParent(rectTransform, worldPositionStays: false);
-                rt.anchoredPosition = Vector2.zero;
-            }
-        }
-
-        public void ClearEnemyIf(EnemyController e)
-        {
-            if (enemy == e)
-            {
-                enemy = null;
-            }
-        }
-
-        public void SetHero(HeroController h)
-        {
-            hero = h;
-            if (h != null)
-            {
-                var rt = h.GetComponent<RectTransform>();
-                rt.SetParent(rectTransform, worldPositionStays: false);
-                rt.anchoredPosition = Vector2.zero;
-            }
-        }
-
-        public void ClearHeroIf(HeroController h)
-        {
-            if (hero == h)
-            {
-                hero = null;
             }
         }
     }

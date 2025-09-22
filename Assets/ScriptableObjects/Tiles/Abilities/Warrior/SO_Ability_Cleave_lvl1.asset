@@ -21,7 +21,8 @@ MonoBehaviour:
   backgroundTint: {r: 1, g: 1, b: 1, a: 1}
   prefabOverride: {fileID: 0}
   draggable: 1
-  modules: []
+  modules:
+  - {fileID: 8547430862116308021}
   mergesWith: {fileID: 0}
 --- !u!114 &8547430862116308021
 MonoBehaviour:
@@ -35,7 +36,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03e7a38150db49042967f49317863416, type: 3}
   m_Name: SO_Ability_Cleave_lvl1_TileAbilityModule
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.TileAbilityModule
-  canAttack: 0
-  damage: 1
-  area: 0
+  canAttack: 1
+  damage: 3
+  area: 1
   abilityVfxPrefab: {fileID: 0}

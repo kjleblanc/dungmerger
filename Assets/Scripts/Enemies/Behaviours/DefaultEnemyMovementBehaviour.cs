@@ -117,8 +117,12 @@ namespace MergeDungeon.Core
             {
                 if (cell.tile != null)
                 {
-                    UnityEngine.Object.Destroy(cell.tile.gameObject);
-                    cell.tile = null;
+                    var existing = cell.tile;
+                    cell.ClearTileIf(existing);
+                    if (existing != null)
+                    {
+                        UnityEngine.Object.Destroy(existing.gameObject);
+                    }
                 }
 
                 if (!cell.IsFreeForTile())
