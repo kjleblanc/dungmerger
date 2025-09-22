@@ -126,6 +126,7 @@ namespace MergeDungeon.Core
             float basePaddedRowWidth = baseRowTotalWidth + padding.left + padding.right;
             float baseRowStep = cellSize.x + spacing.x;
             float baseRowStart = -basePaddedRowWidth * 0.5f + padding.left + cellSize.x * 0.5f;
+            float baseRowCenterX = baseRowStart + columnsMinusOne * baseRowStep * 0.5f;
 
             for (int y = 0; y < rowCount; y++)
             {
@@ -193,8 +194,9 @@ namespace MergeDungeon.Core
                     float centerDelta = x - columnCenter;
                     float skewOffset = skewPerColumn * centerDelta;
 
-                    float rowCenterOffset = (scale - 1f) * cellSize.x * 0.5f;
-                    float adjustedX = baseX + rowCenterOffset + skewOffset;
+                    float offsetFromCenter = baseX - baseRowCenterX;
+                    float scaledX = baseRowCenterX + offsetFromCenter * scale;
+                    float adjustedX = scaledX + skewOffset;
 
                     rt.anchoredPosition3D = new Vector3(adjustedX, adjustedY, adjustedZ);
                     rt.localScale = new Vector3(scale, scale, 1f);
