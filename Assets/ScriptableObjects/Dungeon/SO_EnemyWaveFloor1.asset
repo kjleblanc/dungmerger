@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyWave
   spawns:
   - enemyDefinition: {fileID: 11400000, guid: a1a131d64deefa74281f64cf39f0ca17, type: 2}
-    countMin: 5
-    countMax: 5
+    countMin: 1
+    countMax: 1
     hpOverride: 0
     hpBonusPerFloor: 0
     bossFlagForAll: 0
