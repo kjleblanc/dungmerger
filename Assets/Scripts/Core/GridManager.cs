@@ -15,8 +15,6 @@ namespace MergeDungeon.Core
         public GameplayServicesChannelSO servicesChannel;
         public event System.Action<EnemyController> EnemySpawned;
         public event System.Action<EnemyController> EnemyDied;
-        [Header("Events")]
-        public VoidEventChannelSO advanceTick;
         [Header("Board Size (moved to BoardController)")]
         public int Width => _board != null ? _board.width : 0;
         public int Height => _board != null ? _board.height : 0;
@@ -63,6 +61,9 @@ namespace MergeDungeon.Core
         public HeroVisualLibrary heroVisualLibrary;
         [Header("Progression")]
         public AdvanceMeterController advanceMeterController;
+        public event System.Action EnemyTurnStarted;
+        public event System.Action EnemyTurnExecuted;
+        public event System.Action EnemyTurnCompleted;
         public event System.Action EnemyAdvanced;
         public TileFactory tileFactory;
 
@@ -73,6 +74,21 @@ namespace MergeDungeon.Core
         private bool _enemyTurnActive;
         private int _pendingHeroSpawns;
         private Coroutine _enemyAdvanceRoutine;
+        private readonly HashSet<EnemyController> _abilityTargetSet = new HashSet<EnemyController>();
+        private readonly List<EnemyBenchController.SlotMetadata> _abilitySlotBuffer = new List<EnemyBenchController.SlotMetadata>();
+        private readonly List<BenchTarget> _abilityTargetDescriptors = new List<BenchTarget>();
+
+        private readonly struct BenchTarget
+        {
+            public readonly int column;
+            public readonly int rowOffsetFromTop;
+
+            public BenchTarget(int column, int rowOffsetFromTop)
+            {
+                this.column = column;
+                this.rowOffsetFromTop = rowOffsetFromTop;
+            }
+        }
 
         [Header("Drag Layer Sorting")]
         [HideInInspector] public bool forceDragAbove = true; // moved to DragLayerController
@@ -188,10 +204,8 @@ namespace MergeDungeon.Core
             if (_advanceMeter == null) return;
             if (_enemyTurnActive) return;
             _advanceMeter.Increment();
-            _advanceMeter.RefreshUI();
             if (!_advanceMeter.IsFull()) return;
             _advanceMeter.ResetMeter();
-            _advanceMeter.RefreshUI();
             BeginEnemyTurn();
             EnsureEnemyAdvanceRoutine();
         }
@@ -207,10 +221,15 @@ namespace MergeDungeon.Core
         {
             if (_enemyTurnActive) return;
             _enemyTurnActive = true;
+            EnemyTurnStarted?.Invoke();
+            _advanceMeter?.RefreshUI();
         }
         private void EndEnemyTurn()
         {
+            if (!_enemyTurnActive) return;
             _enemyTurnActive = false;
+            EnemyTurnCompleted?.Invoke();
+            _advanceMeter?.RefreshUI();
         }
         private void EnsureEnemyAdvanceRoutine()
         {
@@ -226,11 +245,71 @@ namespace MergeDungeon.Core
                 yield return null;
             }
             yield return null;
-            advanceTick?.Raise();
+            ExecuteEnemyTurnSequence();
+            EnemyTurnExecuted?.Invoke();
             EnemyAdvanced?.Invoke();
-            _advanceMeter?.RefreshUI();
             EndEnemyTurn();
             _enemyAdvanceRoutine = null;
+        }
+
+        private void ExecuteEnemyTurnSequence()
+        {
+            var bench = ResolveEnemyBench();
+            if (bench != null)
+            {
+                bench.ExecuteEnemyTurn();
+                return;
+            }
+
+            var spawner = ResolveEnemySpawner();
+            if (spawner == null)
+            {
+                return;
+            }
+
+            var enemies = spawner.GetEnemiesSnapshot();
+            if (enemies == null || enemies.Count == 0)
+            {
+                return;
+            }
+
+            enemies.Sort((a, b) => ResolveSlotIndex(a).CompareTo(ResolveSlotIndex(b)));
+
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                var enemy = enemies[i];
+                if (enemy == null) continue;
+                enemy.ExecuteTurn();
+            }
+
+            int ResolveSlotIndex(EnemyController enemy)
+            {
+                if (enemy == null) return int.MaxValue;
+                if (enemy.TryGetBenchSlot(out var meta))
+                {
+                    return meta.index;
+                }
+                return int.MaxValue;
+            }
+        }
+
+        private EnemyBenchController ResolveEnemyBench()
+        {
+            if (_enemyBench != null) return _enemyBench;
+            if (enemyBench != null) return enemyBench;
+            return _servicesContext != null ? _servicesContext.EnemyBench : null;
+        }
+
+        private EnemySpawner ResolveEnemySpawner()
+        {
+            if (_enemySpawner != null) return _enemySpawner;
+            return _servicesContext != null ? _servicesContext.Enemies : null;
+        }
+
+        private BoardController ResolveBoard()
+        {
+            if (_board != null) return _board;
+            return _servicesContext != null ? _servicesContext.Board : null;
         }
         private void RefreshEnemyAdvanceUI()
         {
@@ -394,44 +473,180 @@ namespace MergeDungeon.Core
                 }
                 return true;
             }
-            else // CrossPlus area
+            else
             {
-                ApplyAreaDamage(enemy, damage);
+                ApplyAreaDamage(tile, enemy, damage, abilityModule);
                 return true;
             }
         }
-        private void ApplyAreaDamage(EnemyController centerEnemy, int damage)
+        private void ApplyAreaDamage(TileBase sourceTile, EnemyController centerEnemy, int damage, TileAbilityModule abilityModule)
         {
             if (centerEnemy == null) return;
 
-            centerEnemy.ApplyHit(damage);
+            _abilityTargetSet.Clear();
+            _abilityTargetSet.Add(centerEnemy);
 
-            var bench = _enemyBench != null ? _enemyBench : enemyBench;
-            var spawner = _enemySpawner != null ? _enemySpawner : (_servicesContext != null ? _servicesContext.Enemies : null);
-            if (bench == null || spawner == null) return;
-            if (!centerEnemy.TryGetBenchSlot(out var centerSlot)) return;
+            CollectAbilityTargets(centerEnemy, abilityModule, _abilityTargetSet);
 
-            int centerColumn = centerSlot.preferredBoardColumn;
-            int centerRowOffset = centerSlot.targetRowOffsetFromTop;
-
-            var snapshot = spawner.GetEnemiesSnapshot();
-            for (int i = 0; i < snapshot.Count; i++)
+            foreach (var target in _abilityTargetSet)
             {
-                var other = snapshot[i];
-                if (other == null || other == centerEnemy) continue;
-                if (!other.TryGetBenchSlot(out var otherSlot)) continue;
-
-                bool hasColumnData = centerColumn >= 0 && otherSlot.preferredBoardColumn >= 0;
-                bool sharesColumn = hasColumnData && otherSlot.preferredBoardColumn == centerColumn;
-                bool adjacentColumn = hasColumnData && Mathf.Abs(otherSlot.preferredBoardColumn - centerColumn) == 1 && otherSlot.targetRowOffsetFromTop == centerRowOffset;
-                bool verticalNeighbor = sharesColumn && Mathf.Abs(otherSlot.targetRowOffsetFromTop - centerRowOffset) == 1;
-                bool slotNeighbor = Mathf.Abs(otherSlot.index - centerSlot.index) == 1;
-
-                if (adjacentColumn || verticalNeighbor || slotNeighbor)
+                if (target == null) continue;
+                target.ApplyHit(damage);
+                if (_vfx != null && sourceTile != null && abilityModule != null && abilityModule.abilityVfxPrefab != null)
                 {
-                    other.ApplyHit(damage);
+                    var rt = target.GetComponent<RectTransform>();
+                    if (rt != null)
+                    {
+                        _vfx.SpawnAbilityFx(rt, abilityModule.abilityVfxPrefab);
+                    }
                 }
             }
+        }
+
+        private void CollectAbilityTargets(EnemyController centerEnemy, TileAbilityModule abilityModule, HashSet<EnemyController> results)
+        {
+            if (centerEnemy == null || abilityModule == null || results == null)
+            {
+                return;
+            }
+
+            if (abilityModule.area == AbilityArea.SingleTarget)
+            {
+                return;
+            }
+
+            if (!centerEnemy.TryGetBenchSlot(out var centerSlot))
+            {
+                return;
+            }
+
+            bool added = false;
+            var bench = ResolveEnemyBench();
+            if (bench != null)
+            {
+                added = TryCollectTargetsFromBench(bench, centerSlot, abilityModule, results);
+            }
+
+            if (!added)
+            {
+                var spawner = ResolveEnemySpawner();
+                if (spawner != null)
+                {
+                    CollectTargetsBySpawnerSnapshot(spawner, centerEnemy, centerSlot, results);
+                }
+            }
+        }
+
+        private bool TryCollectTargetsFromBench(EnemyBenchController bench, EnemyBenchController.SlotMetadata centerSlot, TileAbilityModule abilityModule, HashSet<EnemyController> results)
+        {
+            var snapshot = bench.GetSlotMetadataSnapshot(_abilitySlotBuffer);
+            if (snapshot == null || snapshot.Count == 0)
+            {
+                return false;
+            }
+
+            var board = ResolveBoard();
+            int boardWidth = board != null ? board.width : 0;
+            int boardHeight = board != null ? board.height : 0;
+
+            _abilityTargetDescriptors.Clear();
+            AddAbilityDescriptor(centerSlot.preferredBoardColumn, centerSlot.targetRowOffsetFromTop, boardWidth, boardHeight);
+
+            if (abilityModule.area == AbilityArea.CrossPlus)
+            {
+                AddAbilityDescriptor(centerSlot.preferredBoardColumn - 1, centerSlot.targetRowOffsetFromTop, boardWidth, boardHeight);
+                AddAbilityDescriptor(centerSlot.preferredBoardColumn + 1, centerSlot.targetRowOffsetFromTop, boardWidth, boardHeight);
+                AddAbilityDescriptor(centerSlot.preferredBoardColumn, centerSlot.targetRowOffsetFromTop + 1, boardWidth, boardHeight);
+                AddAbilityDescriptor(centerSlot.preferredBoardColumn, centerSlot.targetRowOffsetFromTop - 1, boardWidth, boardHeight);
+            }
+
+            bool added = false;
+            for (int i = 0; i < snapshot.Count; i++)
+            {
+                var meta = snapshot[i];
+                if (meta.index == centerSlot.index) continue;
+                if (meta.occupant == null) continue;
+
+                if (MatchesAnyDescriptor(meta, _abilityTargetDescriptors))
+                {
+                    added |= results.Add(meta.occupant);
+                }
+            }
+
+            if (!added && abilityModule.area != AbilityArea.SingleTarget)
+            {
+                added |= TryCollectAdjacentByIndex(snapshot, centerSlot, results);
+            }
+
+            return added;
+        }
+
+        private void CollectTargetsBySpawnerSnapshot(EnemySpawner spawner, EnemyController centerEnemy, EnemyBenchController.SlotMetadata centerSlot, HashSet<EnemyController> results)
+        {
+            var snapshot = spawner.GetEnemiesSnapshot();
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < snapshot.Count; i++)
+            {
+                var enemy = snapshot[i];
+                if (enemy == null || enemy == centerEnemy) continue;
+                if (!enemy.TryGetBenchSlot(out var otherSlot)) continue;
+
+                if (Mathf.Abs(otherSlot.index - centerSlot.index) == 1)
+                {
+                    results.Add(enemy);
+                }
+            }
+        }
+
+        private bool TryCollectAdjacentByIndex(IReadOnlyList<EnemyBenchController.SlotMetadata> snapshot, EnemyBenchController.SlotMetadata centerSlot, HashSet<EnemyController> results)
+        {
+            bool added = false;
+            for (int i = 0; i < snapshot.Count; i++)
+            {
+                var meta = snapshot[i];
+                if (meta.index == centerSlot.index) continue;
+                if (meta.occupant == null) continue;
+                if (Mathf.Abs(meta.index - centerSlot.index) == 1)
+                {
+                    added |= results.Add(meta.occupant);
+                }
+            }
+            return added;
+        }
+
+        private void AddAbilityDescriptor(int column, int rowOffsetFromTop, int boardWidth, int boardHeight)
+        {
+            if (column < 0) return;
+            if (boardWidth > 0 && column >= boardWidth) return;
+            if (rowOffsetFromTop < 0) return;
+            if (boardHeight > 0 && rowOffsetFromTop >= boardHeight) return;
+
+            _abilityTargetDescriptors.Add(new BenchTarget(column, rowOffsetFromTop));
+        }
+
+        private static bool MatchesAnyDescriptor(EnemyBenchController.SlotMetadata slot, List<BenchTarget> descriptors)
+        {
+            if (descriptors == null || descriptors.Count == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < descriptors.Count; i++)
+            {
+                var descriptor = descriptors[i];
+                bool columnMatches = descriptor.column < 0 || (slot.preferredBoardColumn >= 0 && slot.preferredBoardColumn == descriptor.column);
+                bool rowMatches = descriptor.rowOffsetFromTop < 0 || (slot.targetRowOffsetFromTop >= 0 && slot.targetRowOffsetFromTop == descriptor.rowOffsetFromTop);
+                if (columnMatches && rowMatches)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
         public void SpawnDamagePopup(RectTransform target, int amount, Color color)
         {
