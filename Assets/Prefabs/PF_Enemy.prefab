@@ -186,24 +186,10 @@ MonoBehaviour:
   hp: 1
   isBoss: 0
   engagedWithHero: 0
-  currentCell: {fileID: 0}
   bg: {fileID: 0}
   label: {fileID: 0}
   healthFill: {fileID: 8475263902027756400}
   enemyVisual: {fileID: 1541206309244222606}
---- !u!114 &5091069614002091335
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5828500069196473442}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 33deea6fe8272334aa3bf5cebb453492, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyUnitMover
-  servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
 --- !u!1 &8918530165313155133
 GameObject:
   m_ObjectHideFlags: 0

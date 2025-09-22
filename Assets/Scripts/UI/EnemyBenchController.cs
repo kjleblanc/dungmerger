@@ -73,6 +73,7 @@ namespace MergeDungeon.Core
         [SerializeField] private List<Slot> slots = new List<Slot>();
 
         private readonly Dictionary<EnemyController, int> _slotLookup = new Dictionary<EnemyController, int>();
+        private readonly List<SlotMetadata> _turnExecutionBuffer = new List<SlotMetadata>();
 
         public RectTransform BenchRoot => benchRoot != null ? benchRoot : (RectTransform)transform;
         public RectTransform EnemySpawnOrigin => enemySpawnOrigin != null ? enemySpawnOrigin : BenchRoot;
@@ -214,6 +215,31 @@ namespace MergeDungeon.Core
             }
 
             return buffer;
+        }
+
+        public void ExecuteEnemyTurn()
+        {
+            if (slots == null || slots.Count == 0)
+            {
+                return;
+            }
+
+            var snapshot = GetSlotMetadataSnapshot(_turnExecutionBuffer);
+            if (snapshot == null || snapshot.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < snapshot.Count; i++)
+            {
+                var meta = snapshot[i];
+                if (meta.occupant == null)
+                {
+                    continue;
+                }
+
+                meta.occupant.ExecuteTurn();
+            }
         }
 
         private void AttachEnemyToSlot(EnemyController enemy, Slot slot)

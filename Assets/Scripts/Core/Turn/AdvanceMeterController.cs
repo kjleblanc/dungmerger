@@ -15,7 +15,6 @@ namespace MergeDungeon.Core
         [Header("UI (Optional)")]
         public Image enemyAdvanceFill;
         public TMP_Text enemyAdvanceLabel;
-        public VoidEventChannelSO meterChanged;
 
         [Header("Pulse (Optional)")]
         public bool enemyAdvancePulse = true;
@@ -24,22 +23,43 @@ namespace MergeDungeon.Core
         public float enemyAdvancePulseAmplitude = 0.05f;
         public RectTransform enemyAdvancePulseTarget; // defaults to fill rect
 
+        private GridManager _grid;
+        private bool _enemyTurnActive;
+
         public void InitializeFrom(GridManager grid)
         {
             // GridManager no longer owns meter fields; keep existing controller values.
             if (enemyAdvancePulseTarget == null && enemyAdvanceFill != null)
                 enemyAdvancePulseTarget = enemyAdvanceFill.rectTransform;
+
+            if (_grid == grid)
+            {
+                RefreshUI();
+                return;
+            }
+
+            DetachFromGrid();
+            _grid = grid;
+            if (isActiveAndEnabled)
+            {
+                AttachToGrid();
+            }
+
             RefreshUI();
         }
 
         public void Increment()
         {
             enemyAdvanceMeter = Mathf.Clamp(enemyAdvanceMeter + 1, 0, Mathf.Max(1, enemyAdvanceThreshold));
-            if (meterChanged != null) meterChanged.Raise();
+            RefreshUI();
         }
 
         public bool IsFull() => enemyAdvanceMeter >= Mathf.Max(1, enemyAdvanceThreshold);
-        public void ResetMeter() { enemyAdvanceMeter = 0; if (meterChanged != null) meterChanged.Raise(); }
+        public void ResetMeter()
+        {
+            enemyAdvanceMeter = 0;
+            RefreshUI();
+        }
 
         public void RefreshUI()
         {
@@ -51,18 +71,25 @@ namespace MergeDungeon.Core
             }
             if (enemyAdvanceLabel != null)
             {
-                enemyAdvanceLabel.text = $"ENEMY MOVE: {enemyAdvanceMeter}/{Mathf.Max(1, enemyAdvanceThreshold)}";
+                if (_enemyTurnActive)
+                {
+                    enemyAdvanceLabel.text = "ENEMY TURN";
+                }
+                else
+                {
+                    enemyAdvanceLabel.text = $"ENEMY TURN IN {enemyAdvanceMeter}/{Mathf.Max(1, enemyAdvanceThreshold)}";
+                }
             }
         }
 
         private void OnEnable()
         {
-            if (meterChanged != null) meterChanged.Raised += RefreshUI;
+            AttachToGrid();
         }
 
         private void OnDisable()
         {
-            if (meterChanged != null) meterChanged.Raised -= RefreshUI;
+            DetachFromGrid();
         }
 
         private void LateUpdate()
@@ -78,6 +105,39 @@ namespace MergeDungeon.Core
             {
                 enemyAdvancePulseTarget.localScale = Vector3.one;
             }
+        }
+
+        private void AttachToGrid()
+        {
+            if (_grid == null) return;
+            _grid.EnemyTurnStarted += OnEnemyTurnStarted;
+            _grid.EnemyTurnCompleted += OnEnemyTurnCompleted;
+            _grid.EnemyTurnExecuted += OnEnemyTurnExecuted;
+        }
+
+        private void DetachFromGrid()
+        {
+            if (_grid == null) return;
+            _grid.EnemyTurnStarted -= OnEnemyTurnStarted;
+            _grid.EnemyTurnCompleted -= OnEnemyTurnCompleted;
+            _grid.EnemyTurnExecuted -= OnEnemyTurnExecuted;
+        }
+
+        private void OnEnemyTurnStarted()
+        {
+            _enemyTurnActive = true;
+            RefreshUI();
+        }
+
+        private void OnEnemyTurnCompleted()
+        {
+            _enemyTurnActive = false;
+            RefreshUI();
+        }
+
+        private void OnEnemyTurnExecuted()
+        {
+            RefreshUI();
         }
     }
 }

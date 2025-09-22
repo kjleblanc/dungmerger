@@ -1062,7 +1062,6 @@ Transform:
   m_Children:
   - {fileID: 1199088243}
   - {fileID: 149086632}
-  - {fileID: 1392160006}
   - {fileID: 1879312547}
   - {fileID: 2025446240}
   - {fileID: 1318399763}
@@ -1391,7 +1390,6 @@ MonoBehaviour:
   enemyAdvanceMeter: 0
   enemyAdvanceFill: {fileID: 477766322}
   enemyAdvanceLabel: {fileID: 0}
-  meterChanged: {fileID: 11400000, guid: 2753776bcfcaea041956efc657413ae6, type: 2}
   enemyAdvancePulse: 1
   enemyAdvancePulseThreshold: 0.8
   enemyAdvancePulseSpeed: 6
@@ -1862,10 +1860,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c94bd8d312802b4bb47f6f34ea5ff47, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.GridManager
   servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
-  advanceTick: {fileID: 11400000, guid: 2753776bcfcaea041956efc657413ae6, type: 2}
   heroBench: {fileID: 1990000004}
   enemyBench: {fileID: 0}
   dragLayerController: {fileID: 384231589}
@@ -2000,51 +1997,6 @@ RectTransform:
   m_AnchoredPosition: {x: -2.33, y: -0.000017166}
   m_SizeDelta: {x: 1026.44, y: 1144.2}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &918095302
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 918095303}
-  - component: {fileID: 918095304}
-  m_Layer: 0
-  m_Name: EnemyCoordinator
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &918095303
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 918095302}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1392160006}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &918095304
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 918095302}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8f85259e994afa54b8415f1378e1842f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.EnemyCoordinator
-  servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
 --- !u!1 &939038657
 GameObject:
   m_ObjectHideFlags: 0
@@ -3084,38 +3036,6 @@ MonoBehaviour:
   m_DefaultActionMap: Gameplay
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
---- !u!1 &1392160005
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1392160006}
-  m_Layer: 0
-  m_Name: EnemySystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1392160006
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1392160005}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 918095303}
-  m_Father: {fileID: 480116286}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1416101199
 GameObject:
   m_ObjectHideFlags: 0
