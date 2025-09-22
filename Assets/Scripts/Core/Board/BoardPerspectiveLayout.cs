@@ -122,6 +122,11 @@ namespace MergeDungeon.Core
             var rowStartX = new float[rowCount];
             var rowStepX = new float[rowCount];
 
+            float baseRowTotalWidth = cellSize.x * columnCount + columnsMinusOne * spacing.x;
+            float basePaddedRowWidth = baseRowTotalWidth + padding.left + padding.right;
+            float baseRowStep = cellSize.x + spacing.x;
+            float baseRowStart = -basePaddedRowWidth * 0.5f + padding.left + cellSize.x * 0.5f;
+
             for (int y = 0; y < rowCount; y++)
             {
                 float rowNormalized = rowCount <= 1 ? 0f : (float)y / (rowCount - 1);
@@ -131,11 +136,8 @@ namespace MergeDungeon.Core
                 rowSkewPerColumn[y] = horizontalSkew * rowNormalized;
                 rowDesignerZOffset[y] = rowZOffset * rowNormalized;
 
-                float scaledCellWidth = cellSize.x * scale;
-                float rowTotalWidth = scaledCellWidth * columnCount + columnsMinusOne * spacing.x;
-                float paddedRowWidth = rowTotalWidth + padding.left + padding.right;
-                rowStepX[y] = scaledCellWidth + spacing.x;
-                rowStartX[y] = -paddedRowWidth * 0.5f + padding.left + scaledCellWidth * 0.5f;
+                rowStepX[y] = baseRowStep;
+                rowStartX[y] = baseRowStart;
             }
 
             var cumulativeCompression = new float[rowCount];
@@ -191,7 +193,10 @@ namespace MergeDungeon.Core
                     float centerDelta = x - columnCenter;
                     float skewOffset = skewPerColumn * centerDelta;
 
-                    rt.anchoredPosition3D = new Vector3(baseX + skewOffset, adjustedY, adjustedZ);
+                    float rowCenterOffset = (scale - 1f) * cellSize.x * 0.5f;
+                    float adjustedX = baseX + rowCenterOffset + skewOffset;
+
+                    rt.anchoredPosition3D = new Vector3(adjustedX, adjustedY, adjustedZ);
                     rt.localScale = new Vector3(scale, scale, 1f);
                     rt.localRotation = rotation;
                 }
