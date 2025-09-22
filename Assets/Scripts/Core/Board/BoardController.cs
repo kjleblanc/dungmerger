@@ -64,6 +64,8 @@ namespace MergeDungeon.Core
                     _cells[x, y] = cell;
                 }
             }
+
+            RecomputeGridCellSize(force: true);
         }
 
         private void OnValidate()
@@ -84,19 +86,54 @@ namespace MergeDungeon.Core
 
         public void RecomputeGridCellSize(bool force = false)
         {
-            if (!autoFitCellSize || boardLayout == null || boardContainer == null) return;
-            var size = boardContainer.rect.size;
-            if (!force && (Vector2)size == _lastBoardSize) return;
-            _lastBoardSize = size;
+            if (boardContainer == null)
+                return;
 
-            var pad = boardLayout.padding;
-            var spacing = boardLayout.spacing;
-            float availW = Mathf.Max(0, size.x - pad.left - pad.right - spacing.x * (width - 1));
-            float availH = Mathf.Max(0, size.y - pad.top - pad.bottom - spacing.y * (height - 1));
-            float cellW = width > 0 ? availW / width : 0f;
-            float cellH = height > 0 ? availH / height : 0f;
-            float cell = Mathf.Max(8f, Mathf.Min(cellW, cellH));
-            boardLayout.cellSize = new Vector2(cell, cell);
+            if (boardLayout == null)
+                boardLayout = boardContainer.GetComponent<GridLayoutGroup>();
+
+            bool sizeChanged = force;
+
+            if (autoFitCellSize && boardLayout != null)
+            {
+                var size = boardContainer.rect.size;
+                if (force || (Vector2)size != _lastBoardSize)
+                {
+                    _lastBoardSize = size;
+
+                    var pad = boardLayout.padding;
+                    var spacing = boardLayout.spacing;
+                    float availW = Mathf.Max(0, size.x - pad.left - pad.right - spacing.x * (width - 1));
+                    float availH = Mathf.Max(0, size.y - pad.top - pad.bottom - spacing.y * (height - 1));
+                    float cellW = width > 0 ? availW / width : 0f;
+                    float cellH = height > 0 ? availH / height : 0f;
+                    float cell = Mathf.Max(8f, Mathf.Min(cellW, cellH));
+                    boardLayout.cellSize = new Vector2(cell, cell);
+                    sizeChanged = true;
+                }
+            }
+
+            var perspective = GetComponent<BoardPerspectiveLayout>();
+            if (perspective != null && perspective.isActiveAndEnabled)
+            {
+                if (boardLayout != null)
+                {
+                    boardLayout.enabled = false;
+                }
+                perspective.ApplyLayout();
+            }
+            else if (boardLayout != null)
+            {
+                if (!boardLayout.enabled)
+                {
+                    boardLayout.enabled = true;
+                }
+
+                if (sizeChanged && boardContainer.gameObject.activeInHierarchy)
+                {
+                    LayoutRebuilder.MarkLayoutForRebuild(boardContainer);
+                }
+            }
         }
 
         public BoardCell GetCell(int x, int y)
