@@ -34,6 +34,7 @@ namespace MergeDungeon.Core
         [Header("Visuals")]
         public Sprite icon;
         public Color iconTint = Color.white;
+        public Vector2 iconScale = Vector2.one;
         public Sprite background;
         public Color backgroundTint = Color.white;
         public TileBase prefabOverride;

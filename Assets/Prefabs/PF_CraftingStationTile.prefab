@@ -242,6 +242,7 @@ MonoBehaviour:
   kind: 0
   currentCell: {fileID: 0}
   lootRemaining: 0
+  iconArtRoot: {fileID: 7910467117270176956}
   iconBg: {fileID: 5668592312224577073}
   label: {fileID: 7343064382040991631}
 --- !u!114 &5862809915840203231
@@ -259,6 +260,7 @@ MonoBehaviour:
   kind: 0
   currentCell: {fileID: 0}
   lootRemaining: 0
+  iconArtRoot: {fileID: 7910467117270176956}
   iconBg: {fileID: 5668592312224577073}
   label: {fileID: 7343064382040991631}
   stationType: 1

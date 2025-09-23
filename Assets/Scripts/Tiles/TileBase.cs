@@ -18,6 +18,7 @@ namespace MergeDungeon.Core
         public int lootRemaining = 0; // used only for LootBag kinds
 
         [Header("Visuals")]
+        public RectTransform iconArtRoot;
         public Image iconBg;
         public TMP_Text label;
 
@@ -28,6 +29,14 @@ namespace MergeDungeon.Core
         private void Awake()
         {
             _cg = GetComponent<CanvasGroup>();
+            EnsureIconArtRoot();
+            ApplyIconScale(def);
+        }
+
+        private void OnValidate()
+        {
+            EnsureIconArtRoot();
+            ApplyIconScale(def);
         }
 
         private void Start()
@@ -45,6 +54,9 @@ namespace MergeDungeon.Core
 
         public void RefreshVisual()
         {
+            EnsureIconArtRoot();
+            ApplyIconScale(def);
+
             if (def != null)
             {
                 if (label != null)
@@ -221,6 +233,7 @@ namespace MergeDungeon.Core
 
         public void SetDefinition(TileDefinition d)
         {
+            EnsureIconArtRoot();
             def = d;
             if (def != null && def.modules != null)
             {
@@ -231,6 +244,29 @@ namespace MergeDungeon.Core
                 }
             }
             RefreshVisual();
+        }
+
+        private void EnsureIconArtRoot()
+        {
+            if (iconArtRoot == null && iconBg != null)
+            {
+                iconArtRoot = iconBg.rectTransform;
+            }
+        }
+
+        private void ApplyIconScale(TileDefinition definition)
+        {
+            if (iconArtRoot == null) return;
+
+            if (definition != null)
+            {
+                var scale = definition.iconScale;
+                iconArtRoot.localScale = new Vector3(scale.x, scale.y, 1f);
+            }
+            else
+            {
+                iconArtRoot.localScale = Vector3.one;
+            }
         }
 
         private void ReturnToCell()

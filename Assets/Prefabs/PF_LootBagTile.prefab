@@ -242,5 +242,6 @@ MonoBehaviour:
   def: {fileID: 11400000, guid: 7187611a4d721454e8485bc0f9f5568a, type: 2}
   currentCell: {fileID: 0}
   lootRemaining: 0
+  iconArtRoot: {fileID: 7910467117270176956}
   iconBg: {fileID: 5668592312224577073}
   label: {fileID: 7343064382040991631}
