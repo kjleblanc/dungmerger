@@ -174,7 +174,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 210, y: 210}
+  m_SizeDelta: {x: 256, y: 256}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5652253500525192773
 CanvasRenderer:
@@ -239,7 +239,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.TileBase
   servicesChannel: {fileID: 11400000, guid: 19512b559330ee14fb4cc542e10129d0, type: 2}
-  def: {fileID: 11400000, guid: f0b2978e87502cc4aa3217349ce96797, type: 2}
+  def: {fileID: 0}
   currentCell: {fileID: 0}
   lootRemaining: 0
   iconBg: {fileID: 5668592312224577073}

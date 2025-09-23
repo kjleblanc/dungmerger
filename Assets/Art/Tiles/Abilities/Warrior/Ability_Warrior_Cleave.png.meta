@@ -1,0 +1,468 @@
+fileFormatVersion: 2
+guid: 3c61136d052545340ac36bb150d29f40
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -2793617448144547221
+    second: Ability_Warrior_Cleave_0
+  - first:
+      213: -3950409267468606351
+    second: Ability_Warrior_Cleave_1
+  - first:
+      213: -4110581026854477113
+    second: Ability_Warrior_Cleave_2
+  - first:
+      213: 259821523477442846
+    second: Ability_Warrior_Cleave_3
+  - first:
+      213: -1581664337985421420
+    second: Ability_Warrior_Cleave_4
+  - first:
+      213: -5887938764866300373
+    second: Ability_Warrior_Cleave_5
+  - first:
+      213: -7454505404679397551
+    second: Ability_Warrior_Cleave_6
+  - first:
+      213: -3589672158866938072
+    second: Ability_Warrior_Cleave_7
+  - first:
+      213: -1594037192421956668
+    second: Ability_Warrior_Cleave_8
+  - first:
+      213: -1258358094074471619
+    second: Ability_Warrior_Cleave_9
+  - first:
+      213: 8930030029140945177
+    second: Ability_Warrior_Cleave_10
+  - first:
+      213: 2194047507122195050
+    second: Ability_Warrior_Cleave_11
+  - first:
+      213: -4797608721284744361
+    second: Ability_Warrior_Cleave_12
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_0
+      rect:
+        serializedVersion: 2
+        x: 39
+        y: 88
+        width: 22
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b62d20d6bb31b39d0800000000000000
+      internalID: -2793617448144547221
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_1
+      rect:
+        serializedVersion: 2
+        x: 50
+        y: 98
+        width: 101
+        height: 118
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1746f1f83b35d29c0800000000000000
+      internalID: -3950409267468606351
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_2
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 56
+        width: 170
+        height: 141
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7c2e0e9b55844f6c0800000000000000
+      internalID: -4110581026854477113
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_3
+      rect:
+        serializedVersion: 2
+        x: 69
+        y: 106
+        width: 137
+        height: 103
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e11bfdb8c421b9300800000000000000
+      internalID: 259821523477442846
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_4
+      rect:
+        serializedVersion: 2
+        x: 44
+        y: 68
+        width: 13
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 49fb9742aaccc0ae0800000000000000
+      internalID: -1581664337985421420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_5
+      rect:
+        serializedVersion: 2
+        x: 54
+        y: 74
+        width: 11
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b2654e493e6d94ea0800000000000000
+      internalID: -5887938764866300373
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_6
+      rect:
+        serializedVersion: 2
+        x: 124
+        y: 56
+        width: 31
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 15fdad184d64c8890800000000000000
+      internalID: -7454505404679397551
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_7
+      rect:
+        serializedVersion: 2
+        x: 46
+        y: 58
+        width: 31
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 82760aeb03cee2ec0800000000000000
+      internalID: -3589672158866938072
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_8
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 43
+        width: 38
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4c3adea7e97d0e9e0800000000000000
+      internalID: -1594037192421956668
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_9
+      rect:
+        serializedVersion: 2
+        x: 107
+        y: 56
+        width: 15
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3b14720bf9698ee0800000000000000
+      internalID: -1258358094074471619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_10
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 41
+        width: 29
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 91964888ff6ddeb70800000000000000
+      internalID: 8930030029140945177
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_11
+      rect:
+        serializedVersion: 2
+        x: 90
+        y: 42
+        width: 9
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6a895a4592d27e10800000000000000
+      internalID: 2194047507122195050
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Ability_Warrior_Cleave_12
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 37
+        width: 10
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 75bb18c69487b6db0800000000000000
+      internalID: -4797608721284744361
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Ability_Warrior_Cleave_0: -2793617448144547221
+      Ability_Warrior_Cleave_1: -3950409267468606351
+      Ability_Warrior_Cleave_10: 8930030029140945177
+      Ability_Warrior_Cleave_11: 2194047507122195050
+      Ability_Warrior_Cleave_12: -4797608721284744361
+      Ability_Warrior_Cleave_2: -4110581026854477113
+      Ability_Warrior_Cleave_3: 259821523477442846
+      Ability_Warrior_Cleave_4: -1581664337985421420
+      Ability_Warrior_Cleave_5: -5887938764866300373
+      Ability_Warrior_Cleave_6: -7454505404679397551
+      Ability_Warrior_Cleave_7: -3589672158866938072
+      Ability_Warrior_Cleave_8: -1594037192421956668
+      Ability_Warrior_Cleave_9: -1258358094074471619
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
