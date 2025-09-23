@@ -28,13 +28,21 @@ namespace MergeDungeon.Core
             if (animator == null) animator = GetComponent<Animator>();
             if (animator == null) return;
 
-            if (CanApplyAnimatorOverride())
+            if (!Application.isPlaying)
             {
-                ApplyAnimatorOverride();
+                TryApplyAnimatorOverrideImmediate(allowWhenNotReady: true);
+                return;
             }
-            else
+
+            ScheduleApplyOverride(restart: true);
+        }
+
+        protected virtual void OnDisable()
+        {
+            if (_applyOverrideRoutine != null)
             {
-                ScheduleApplyOverride();
+                StopCoroutine(_applyOverrideRoutine);
+                _applyOverrideRoutine = null;
             }
         }
 
@@ -52,13 +60,13 @@ namespace MergeDungeon.Core
             if (animator == null) animator = GetComponent<Animator>();
             if (animator == null) return;
 
-            if (!CanApplyAnimatorOverride())
+            if (!Application.isPlaying || !gameObject.activeInHierarchy)
             {
-                ScheduleApplyOverride();
+                TryApplyAnimatorOverrideImmediate(allowWhenNotReady: !Application.isPlaying);
                 return;
             }
 
-            ApplyAnimatorOverride();
+            ScheduleApplyOverride(restart: true);
         }
 
         private bool CanApplyAnimatorOverride()
@@ -76,15 +84,25 @@ namespace MergeDungeon.Core
             animator.enabled = true;
         }
 
-        private void ScheduleApplyOverride()
+        private void ScheduleApplyOverride(bool restart = false)
         {
             if (!gameObject.activeInHierarchy) return;
-            if (_applyOverrideRoutine != null) return;
+
+            if (_applyOverrideRoutine != null)
+            {
+                if (!restart) return;
+                StopCoroutine(_applyOverrideRoutine);
+                _applyOverrideRoutine = null;
+            }
+
             _applyOverrideRoutine = StartCoroutine(ApplyOverrideWhenReady());
         }
 
         private IEnumerator ApplyOverrideWhenReady()
         {
+            // Ensure the Animator has a chance to finish its internal Awake before applying overrides.
+            yield return null;
+
             while (animator != null && overrideController != null)
             {
                 if (CanApplyAnimatorOverride())
@@ -95,6 +113,21 @@ namespace MergeDungeon.Core
                 yield return null;
             }
             _applyOverrideRoutine = null;
+        }
+
+        private bool TryApplyAnimatorOverrideImmediate(bool allowWhenNotReady = false)
+        {
+            if (!allowWhenNotReady)
+            {
+                if (!CanApplyAnimatorOverride()) return false;
+                ApplyAnimatorOverride();
+                return true;
+            }
+
+            if (animator == null || overrideController == null) return false;
+            animator.runtimeAnimatorController = overrideController;
+            animator.enabled = true;
+            return true;
         }
 
         public void SetStaticSprite(Sprite sprite)
