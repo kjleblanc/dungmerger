@@ -19,6 +19,7 @@ namespace MergeDungeon.Core
 
         [Header("Visuals")]
         public RectTransform iconArtRoot;
+        public Image backgroundImage;
         public Image iconBg;
         public TMP_Text label;
 
@@ -66,6 +67,22 @@ namespace MergeDungeon.Core
                     else
                         label.text = def.DisplayName;
                 }
+                if (backgroundImage != null)
+                {
+                    if (def.background != null)
+                    {
+                        backgroundImage.sprite = def.background;
+                        backgroundImage.color = def.backgroundTint;
+                        backgroundImage.enabled = true;
+                    }
+                    else
+                    {
+                        backgroundImage.sprite = null;
+                        backgroundImage.color = Color.white;
+                        backgroundImage.enabled = false;
+                    }
+                }
+
                 if (iconBg != null)
                 {
                     if (def.icon != null)
@@ -73,18 +90,30 @@ namespace MergeDungeon.Core
                         iconBg.sprite = def.icon;
                         iconBg.color = def.iconTint;
                         iconBg.preserveAspect = true;
+                        iconBg.enabled = true;
                     }
-                    else if (def.background != null)
+                    else
                     {
-                        iconBg.sprite = def.background;
-                        iconBg.color = def.backgroundTint;
-                        iconBg.preserveAspect = true;
+                        iconBg.sprite = null;
+                        iconBg.color = Color.white;
+                        iconBg.enabled = false;
                     }
                 }
                 return;
             }
             if (label != null) label.text = string.Empty;
-            if (iconBg != null) { iconBg.sprite = null; iconBg.color = Color.white; }
+            if (backgroundImage != null)
+            {
+                backgroundImage.sprite = null;
+                backgroundImage.color = Color.white;
+                backgroundImage.enabled = false;
+            }
+            if (iconBg != null)
+            {
+                iconBg.sprite = null;
+                iconBg.color = Color.white;
+                iconBg.enabled = false;
+            }
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -248,9 +277,16 @@ namespace MergeDungeon.Core
 
         private void EnsureIconArtRoot()
         {
-            if (iconArtRoot == null && iconBg != null)
+            if (iconArtRoot == null)
             {
-                iconArtRoot = iconBg.rectTransform;
+                if (iconBg != null)
+                {
+                    iconArtRoot = iconBg.rectTransform;
+                }
+                else if (backgroundImage != null)
+                {
+                    iconArtRoot = backgroundImage.rectTransform;
+                }
             }
         }
 
