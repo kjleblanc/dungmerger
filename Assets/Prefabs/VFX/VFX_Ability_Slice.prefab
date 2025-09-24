@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 5915291540230760742}
   - component: {fileID: 1729701255708787081}
   - component: {fileID: 154989449849499579}
+  - component: {fileID: 247735705963921743}
   m_Layer: 7
   m_Name: VFX_Ability_Slice
   m_TagString: Untagged
@@ -4912,3 +4913,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb80a2b16804ccc45b14f675bb77666e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeDungeon.Core.VfxAutoRelease
+--- !u!222 &247735705963921743
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8227109043669110193}
+  m_CullTransparentMesh: 1

@@ -15,8 +15,9 @@ MonoBehaviour:
   id: slice_lvl1
   displayName: Slice
   category: 0
-  icon: {fileID: 8884932312014064634, guid: 84890a797a133874a93bab8603cd86af, type: 3}
+  icon: {fileID: 6387027262663252248, guid: 664117698fd88ea46845d5d1bf19066e, type: 3}
   iconTint: {r: 1, g: 1, b: 1, a: 1}
+  iconScale: {x: 1, y: 1}
   background: {fileID: 0}
   backgroundTint: {r: 0, g: 0.5332718, b: 1, a: 1}
   prefabOverride: {fileID: 0}
